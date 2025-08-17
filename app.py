@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import os
 import requests
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
-from dotenv import load_dotenv
+from llama_index.core import Documentfrom dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
 
 
@@ -11,7 +11,8 @@ load_dotenv()
 app = Flask(__name__)
 
 # Load documents once
-docs = SimpleDirectoryReader("docs").load_data()
+#docs = SimpleDirectoryReader("docs").load_data()
+docs = [Document(text="If VPN fails, restart your client or check your credentials.")]
 index = VectorStoreIndex.from_documents(docs)
 query_engine = index.as_query_engine()
 
