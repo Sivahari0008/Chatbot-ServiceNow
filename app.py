@@ -1,13 +1,18 @@
 from flask import Flask, request, jsonify
 import os
 import requests
+import openai
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.core import Document
 from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
 
 
+
+
 load_dotenv()
+# Set OpenAI API key
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = Flask(__name__)
 
