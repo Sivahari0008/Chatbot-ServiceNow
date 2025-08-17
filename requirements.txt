@@ -1,5 +1,5 @@
 flask
 openai
-llama-index
+llama-index==0.10.20
 python-dotenv
 requests
