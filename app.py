@@ -2,7 +2,8 @@ from flask import Flask, request, jsonify
 import os
 import requests
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.core import Documentfrom dotenv import load_dotenv
+from llama_index.core import Document
+from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
 
 
