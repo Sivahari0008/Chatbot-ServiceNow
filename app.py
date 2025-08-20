@@ -21,22 +21,25 @@ index = VectorStoreIndex.from_documents(docs)
 query_engine = index.as_query_engine()
 
 # --- Helper: Rate-friendly query wrapper ---
-def safe_query_engine(query, max_retries=5, backoff_factor=5):
-    for attempt in range(max_retries):
-        try:
-            response = query_engine.query(query)
-            return str(response)
-        except openai.RateLimitError:
-            wait_time = backoff_factor * (2 ** attempt)  # Exponential backoff
-            print(f"[RateLimitError] Retry in {wait_time} seconds...")
-            time.sleep(wait_time)
-        except openai.OpenAIError as e:
-            print(f"[OpenAIError] {e}")
-            break  # Non-retriable OpenAI error
-        except Exception as e:
-            print(f"[Unknown error] {e}")
-            break
-    return "We're experiencing high demand. Please try again later."
+from openai import OpenAI
+client = OpenAI(
+  base_url="https://openrouter.ai/api/v1",
+  api_key="<OPENAI_API_KEY>",
+)
+completion = client.chat.completions.create(
+  extra_headers={
+    "HTTP-Referer": "<YOUR_SITE_URL>", # Optional. Site URL for rankings on openrouter.ai.
+    "X-Title": "<YOUR_SITE_NAME>", # Optional. Site title for rankings on openrouter.ai.
+  },
+  model="openai/gpt-4o",
+  messages=[
+    {
+      "role": "user",
+      "content": "What is the meaning of life?"
+    }
+  ]
+)
+print(completion.choices[0].message.content)
 
 @app.route("/chat", methods=["POST"])
 def chat():
