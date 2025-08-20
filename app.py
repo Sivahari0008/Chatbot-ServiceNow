@@ -1,45 +1,65 @@
-from flask import Flask, request, jsonify
 import os
-import requests
-import openai
 import time
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.core import Document
+import requests
+from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
-import openai
+from openai import OpenAI
+from llama_index.core import VectorStoreIndex, Document
 
+# Load environment variables
 load_dotenv()
-openai.api_base = "https://openrouter.ai/api/v1"
-openai.api_key = os.getenv("OPENROUTER_API_KEY")
+
+# Initialize OpenRouter client
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.getenv("OPENROUTER_API_KEY")
+)
 
 app = Flask(__name__)
 
-# Load documents once
+# Load documents once (replace with your actual docs)
 docs = [Document(text="If VPN fails, restart your client or check your credentials.")]
 index = VectorStoreIndex.from_documents(docs)
 query_engine = index.as_query_engine()
 
-# --- Helper: Rate-friendly query wrapper ---
-from openai import OpenAI
-client = OpenAI(
-  base_url="https://openrouter.ai/api/v1",
-  api_key="<OPENAI_API_KEY>",
-)
-completion = client.chat.completions.create(
-  extra_headers={
-    "HTTP-Referer": "<YOUR_SITE_URL>", # Optional. Site URL for rankings on openrouter.ai.
-    "X-Title": "<YOUR_SITE_NAME>", # Optional. Site title for rankings on openrouter.ai.
-  },
-  model="openai/gpt-4o",
-  messages=[
-    {
-      "role": "user",
-      "content": "What is the meaning of life?"
+def safe_query_engine(prompt, max_retries=5, backoff_factor=2):
+    """
+    Calls the LlamaIndex query engine with exponential backoff on rate limits.
+    """
+    for attempt in range(max_retries):
+        try:
+            # Query LlamaIndex to get a response
+            response = query_engine.query(prompt)
+            return str(response)
+        except Exception as e:
+            # Example: handle OpenRouter or OpenAI errors here if needed
+            wait_time = backoff_factor * (2 ** attempt)
+            print(f"Error querying engine: {e}. Retrying in {wait_time}s...")
+            time.sleep(wait_time)
+    return "Sorry, the service is currently busy. Please try again later."
+
+def create_incident(short_desc, description, email):
+    url = f"{os.getenv('SERVICENOW_INSTANCE')}/api/now/table/incident"
+    payload = {
+        "short_description": short_desc,
+        "description": description,
+        "caller_id": email,
+        "category": "inquiry"
     }
-  ]
-)
-print(completion.choices[0].message.content)
+    response = requests.post(
+        url,
+        auth=HTTPBasicAuth(
+            os.getenv("SERVICENOW_USERNAME"),
+            os.getenv("SERVICENOW_PASSWORD")
+        ),
+        headers={"Content-Type": "application/json"},
+        json=payload
+    )
+    if response.status_code == 201:
+        return response.json()['result']['number']
+    else:
+        return f"Error creating incident: {response.status_code}"
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -48,6 +68,7 @@ def chat():
     email = data.get("email")
     resolved = data.get("resolved", False)
 
+    # Use safe query function to avoid hitting limits
     answer = safe_query_engine(user_query)
 
     if not resolved:
@@ -56,34 +77,11 @@ def chat():
             "solution": answer,
             "incident": incident
         })
+
     return jsonify({
         "solution": answer,
         "message": "Glad it helped!"
     })
-
-def create_incident(short_desc, description, email):
-    url = f"{os.getenv('SERVICENOW_INSTANCE')}/api/now/table/incident"
-
-    payload = {
-        "short_description": short_desc,
-        "description": description,
-        "caller_id": email,
-        "category": "inquiry"
-    }
-
-    response = requests.post(
-        url,
-        auth=HTTPBasicAuth(
-            os.getenv("SERVICENOW_USERNAME"),
-            os.getenv("SERVICENOW_PASSWORD")),
-        headers={"Content-Type": "application/json"},
-        json=payload
-    )
-
-    if response.status_code == 201:
-        return response.json()['result']['number']
-    else:
-        return f"Error: {response.status_code}"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
