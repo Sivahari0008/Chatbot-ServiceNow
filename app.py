@@ -7,7 +7,7 @@ from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 from llama_index.core import Document
 from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
-from openai.error import RateLimitError, OpenAIError
+import openai
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -25,11 +25,11 @@ def safe_query_engine(query, max_retries=5, backoff_factor=5):
         try:
             response = query_engine.query(query)
             return str(response)
-        except RateLimitError:
+        except openai.RateLimitError:
             wait_time = backoff_factor * (2 ** attempt)  # Exponential backoff
             print(f"[RateLimitError] Retry in {wait_time} seconds...")
             time.sleep(wait_time)
-        except OpenAIError as e:
+        except openai.OpenAIError as e:
             print(f"[OpenAIError] {e}")
             break  # Non-retriable OpenAI error
         except Exception as e:
