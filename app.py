@@ -4,8 +4,10 @@ import requests
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
+
 from openai import OpenAI
 from llama_index.core import VectorStoreIndex, Document
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 # Load environment variables
 load_dotenv()
@@ -16,24 +18,28 @@ client = OpenAI(
     api_key=os.getenv("OPENROUTER_API_KEY")
 )
 
+# Use HuggingFace for local embeddings
+embed_model = HuggingFaceEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+# Flask app setup
 app = Flask(__name__)
 
 # Load documents once (replace with your actual docs)
 docs = [Document(text="If VPN fails, restart your client or check your credentials.")]
-index = VectorStoreIndex.from_documents(docs)
+
+# Use local embedding model when building index
+index = VectorStoreIndex.from_documents(docs, embed_model=embed_model)
 query_engine = index.as_query_engine()
 
 def safe_query_engine(prompt, max_retries=5, backoff_factor=2):
     """
-    Calls the LlamaIndex query engine with exponential backoff on rate limits.
+    Calls the LlamaIndex query engine with exponential backoff on errors.
     """
     for attempt in range(max_retries):
         try:
-            # Query LlamaIndex to get a response
             response = query_engine.query(prompt)
             return str(response)
         except Exception as e:
-            # Example: handle OpenRouter or OpenAI errors here if needed
             wait_time = backoff_factor * (2 ** attempt)
             print(f"Error querying engine: {e}. Retrying in {wait_time}s...")
             time.sleep(wait_time)
@@ -68,7 +74,6 @@ def chat():
     email = data.get("email")
     resolved = data.get("resolved", False)
 
-    # Use safe query function to avoid hitting limits
     answer = safe_query_engine(user_query)
 
     if not resolved:
