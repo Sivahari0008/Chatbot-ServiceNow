@@ -1,7 +1,5 @@
 flask
 openai
-llama-index==0.10.20
-sentence-transformers
-transformers
+llama-index[embed-huggingface]
 python-dotenv
 requests
