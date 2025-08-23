@@ -79,6 +79,11 @@ def create_servicenow_ticket(description):
 
 # === ROUTES ===
 
+@app.route("/", methods=["GET"])
+def home():
+    return "<h2>ServiceNow Chatbot API is Running</h2><p>Send a POST request to <code>/chat</code> with a JSON payload.</p>"
+
+
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json()
