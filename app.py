@@ -1,25 +1,21 @@
 from flask import Flask, request, jsonify
 import os
 import requests
-import openai
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.core import Document
 from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
-
-
-
+from llama_index.core import VectorStoreIndex, Document
+from llama_index.embeddings import HuggingFaceEmbedding
 
 load_dotenv()
-# Set OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = Flask(__name__)
 
-# Load documents once
-#docs = SimpleDirectoryReader("docs").load_data()
+# Use local embedding model
+embed_model = HuggingFaceEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+# Load documents and build index
 docs = [Document(text="If VPN fails, restart your client or check your credentials.")]
-index = VectorStoreIndex.from_documents(docs)
+index = VectorStoreIndex.from_documents(docs, embed_model=embed_model)
 query_engine = index.as_query_engine()
 
 @app.route("/chat", methods=["POST"])
@@ -38,6 +34,7 @@ def chat():
             "solution": answer,
             "incident": incident
         })
+
     return jsonify({
         "solution": answer,
         "message": "Glad it helped!"
@@ -45,14 +42,12 @@ def chat():
 
 def create_incident(short_desc, description, email):
     url = f"{os.getenv('SERVICENOW_INSTANCE')}/api/now/table/incident"
-
     payload = {
         "short_description": short_desc,
         "description": description,
         "caller_id": email,
         "category": "inquiry"
     }
-
     response = requests.post(
         url,
         auth=HTTPBasicAuth(
@@ -61,7 +56,6 @@ def create_incident(short_desc, description, email):
         headers={"Content-Type": "application/json"},
         json=payload
     )
-
     if response.status_code == 201:
         return response.json()['result']['number']
     else:
