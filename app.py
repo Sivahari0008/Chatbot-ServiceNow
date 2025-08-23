@@ -1,10 +1,12 @@
+
+
 from flask import Flask, request, jsonify
 import os
 import requests
 from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
 from llama_index.core import VectorStoreIndex, Document
-from llama_index.embeddings import HuggingFaceEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding 
 
 load_dotenv()
 
