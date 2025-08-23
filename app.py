@@ -1,67 +1,110 @@
-
-
-from flask import Flask, request, jsonify
 import os
+import json
+from flask import Flask, request, jsonify
+import openai
 import requests
-from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
-from llama_index.core import VectorStoreIndex, Document
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding 
 
-load_dotenv()
+# === CONFIGURATION ===
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
+SERVICENOW_INSTANCE = os.getenv("SERVICENOW_INSTANCE")  
+SERVICENOW_USER = os.getenv("SERVICENOW_USER")
+SERVICENOW_PASSWORD = os.getenv("SERVICENOW_PASSWORD")
+
+# === FLASK APP SETUP ===
 app = Flask(__name__)
 
-# Use local embedding model
-embed_model = HuggingFaceEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+# === UTILITY FUNCTIONS ===
 
-# Load documents and build index
-docs = [Document(text="If VPN fails, restart your client or check your credentials.")]
-index = VectorStoreIndex.from_documents(docs, embed_model=embed_model)
-query_engine = index.as_query_engine()
+def extract_keywords(question):
+    """Uses OpenAI to extract relevant error keywords."""
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "Extract 2–4 keywords related to error or issue from user input."},
+                {"role": "user", "content": f"Extract keywords from: {question}"}
+            ],
+            temperature=0.2
+        )
+        content = response.choices[0].message['content']
+        return [kw.strip().lower() for kw in content.split(",")]
+    except Exception as e:
+        print(f"OpenAI error: {e}")
+        return []
+
+def find_fix(keywords, repo_path="./fixes"):
+    """Looks for a fix in the local /fixes folder."""
+    for filename in os.listdir(repo_path):
+        if filename.endswith(".json"):
+            filepath = os.path.join(repo_path, filename)
+            with open(filepath, "r") as f:
+                data = json.load(f)
+                error_keywords = [k.lower() for k in data.get("error_keywords", [])]
+                if any(k in error_keywords for k in keywords):
+                    return data
+    return None
+
+def create_servicenow_ticket(description):
+    """Creates a ticket in ServiceNow via REST API."""
+    url = f"https://{SERVICENOW_INSTANCE}.service-now.com/api/now/table/incident"
+
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
+
+    payload = {
+        "short_description": "Issue auto-created by chatbot",
+        "description": description,
+        "category": "inquiry"
+    }
+
+    try:
+        response = requests.post(
+            url,
+            auth=HTTPBasicAuth(SERVICENOW_USER, SERVICENOW_PASSWORD),
+            headers=headers,
+            json=payload
+        )
+        if response.status_code == 201:
+            return response.json()["result"]["number"]
+        else:
+            print(f"ServiceNow error: {response.text}")
+            return "Error creating ticket"
+    except Exception as e:
+        print(f"ServiceNow exception: {e}")
+        return "Exception during ticket creation"
+
+# === ROUTES ===
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    data = request.json
-    user_query = data.get("message")
-    email = data.get("email")
-    resolved = data.get("resolved", False)
+    data = request.get_json()
+    user_question = data.get("question", "")
+    
+    if not user_question:
+        return jsonify({"error": "Missing 'question' in request."}), 400
 
-    response = query_engine.query(user_query)
-    answer = str(response)
+    keywords = extract_keywords(user_question)
+    fix = find_fix(keywords)
 
-    if not resolved:
-        incident = create_incident(user_query, answer, email)
+    if fix:
         return jsonify({
-            "solution": answer,
-            "incident": incident
+            "status": "found",
+            "message": "Fix found for your issue.",
+            "fix": fix["fix"]
+        })
+    else:
+        ticket_id = create_servicenow_ticket(user_question)
+        return jsonify({
+            "status": "ticket_created",
+            "message": "No solution found. A ticket has been created.",
+            "ticket_number": ticket_id
         })
 
-    return jsonify({
-        "solution": answer,
-        "message": "Glad it helped!"
-    })
-
-def create_incident(short_desc, description, email):
-    url = f"{os.getenv('SERVICENOW_INSTANCE')}/api/now/table/incident"
-    payload = {
-        "short_description": short_desc,
-        "description": description,
-        "caller_id": email,
-        "category": "inquiry"
-    }
-    response = requests.post(
-        url,
-        auth=HTTPBasicAuth(
-            os.getenv("SERVICENOW_USERNAME"),
-            os.getenv("SERVICENOW_PASSWORD")),
-        headers={"Content-Type": "application/json"},
-        json=payload
-    )
-    if response.status_code == 201:
-        return response.json()['result']['number']
-    else:
-        return f"Error: {response.status_code}"
+# === MAIN ===
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
