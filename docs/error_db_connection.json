@@ -1,0 +1,10 @@
+{
+  "error_keywords": ["database", "connection", "timeout"],
+  "description": "Database connection timeout error",
+  "fix": [
+    "Ensure the database server is running.",
+    "Check if the host and port are reachable.",
+    "Verify database credentials in the environment config.",
+    "Restart the database service and try again."
+  ]
+}
