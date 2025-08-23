@@ -7,7 +7,7 @@ from requests.auth import HTTPBasicAuth
 
 from openai import OpenAI
 from llama_index.core import VectorStoreIndex, Document
-pip install "llama-index[embed-huggingface]"
+
 from llama_index.embeddings import HuggingFaceEmbedding
 
 
