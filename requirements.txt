@@ -1,6 +1,7 @@
 flask
 openai
 llama-index==0.10.20
-sentence-transformers transformers
+sentence-transformers
+transformers
 python-dotenv
 requests
