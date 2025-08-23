@@ -7,7 +7,9 @@ from requests.auth import HTTPBasicAuth
 
 from openai import OpenAI
 from llama_index.core import VectorStoreIndex, Document
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+pip install "llama-index[embed-huggingface]"
+from llama_index.embeddings import HuggingFaceEmbedding
+
 
 # Load environment variables
 load_dotenv()
