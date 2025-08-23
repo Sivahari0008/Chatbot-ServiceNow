@@ -1,6 +1,6 @@
 flask
 openai
 llama-index==0.10.20
-llama-index[embed-huggingface]
+sentence-transformers transformers
 python-dotenv
 requests
