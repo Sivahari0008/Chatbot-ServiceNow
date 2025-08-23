@@ -34,7 +34,7 @@ def extract_keywords(question):
         print(f"OpenAI error: {e}")
         return []
 
-def find_fix(keywords, repo_path="./fixes"):
+def find_fix(keywords, repo_path="./docs"):
     """Looks for a fix in the local /fixes folder."""
     for filename in os.listdir(repo_path):
         if filename.endswith(".json"):
