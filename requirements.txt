@@ -1,5 +1,6 @@
 flask
 openai
-llama-index[embed-huggingface]
+llama-index
+llama-index-embeddings-huggingface
 python-dotenv
 requests
