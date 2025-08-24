@@ -8,12 +8,10 @@ from requests.auth import HTTPBasicAuth
 # === CONFIGURATION ===
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-#SERVICENOW_INSTANCE = os.getenv("SERVICENOW_INSTANCE")  
-#SERVICENOW_USER = os.getenv("SERVICENOW_USER")
+SERVICENOW_INSTANCE = os.getenv("SERVICENOW_INSTANCE")  
+SERVICENOW_USER = os.getenv("SERVICENOW_USER")
 SERVICENOW_PASSWORD = os.getenv("SERVICENOW_PASSWORD")
-SERVICENOW_INSTANCE = "dev183670" 
-SERVICENOW_USER = "admin"
-#SERVICENOW_PASSWORD ="at^MufBR4G-6"
+
 
 # === FLASK APP SETUP ===
 app = Flask(__name__)
