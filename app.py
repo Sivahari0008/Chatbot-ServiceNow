@@ -45,9 +45,8 @@ def find_fix(keywords, repo_path="./docs"):
                 if any(k in error_keywords for k in keywords):
                     return data
     return None
-
+    
 def create_servicenow_ticket(description):
-    """Creates a ticket in ServiceNow via REST API."""
     url = f"https://{SERVICENOW_INSTANCE}.service-now.com/api/now/table/incident"
 
     headers = {
@@ -62,20 +61,31 @@ def create_servicenow_ticket(description):
     }
 
     try:
+        print("Sending request to ServiceNow...")
+        print("URL:", url)
+        print("Payload:", payload)
+        print("User:", SERVICENOW_USER)
+
         response = requests.post(
             url,
             auth=HTTPBasicAuth(SERVICENOW_USER, SERVICENOW_PASSWORD),
             headers=headers,
-            json=payload
+            json=payload,
+            timeout=10  # optional timeout
         )
+
+        print("Response Status:", response.status_code)
+        print("Response Body:", response.text)
+
         if response.status_code == 201:
             return response.json()["result"]["number"]
         else:
-            print(f"ServiceNow error: {response.text}")
-            return "Error creating ticket"
-    except Exception as e:
-        print(f"ServiceNow exception: {e}")
-        return "Exception during ticket creation"
+            return f"ServiceNow error: {response.status_code} - {response.text}"
+    except requests.exceptions.RequestException as e:
+        print("Request Exception:", e)
+        return f"Exception during ticket creation: {str(e)}"
+
+
 
 # === ROUTES ===
 
