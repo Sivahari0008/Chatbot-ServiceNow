@@ -1,6 +1,6 @@
 import os
 import json
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import openai
 import requests
 from requests.auth import HTTPBasicAuth
@@ -99,7 +99,7 @@ def create_servicenow_ticket(description):
 
 @app.route("/", methods=["GET"])
 def home():
-    return "<h2>ServiceNow Chatbot API is Running</h2><p>Send a POST request to <code>/chat</code> with a JSON payload.</p>"
+    return send_from_directory(".", "index.html")
 
 
 @app.route("/chat", methods=["POST"])
