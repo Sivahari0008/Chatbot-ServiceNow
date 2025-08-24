@@ -8,9 +8,12 @@ from requests.auth import HTTPBasicAuth
 # === CONFIGURATION ===
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-SERVICENOW_INSTANCE = os.getenv("SERVICENOW_INSTANCE")  
-SERVICENOW_USER = os.getenv("SERVICENOW_USER")
-SERVICENOW_PASSWORD = os.getenv("SERVICENOW_PASSWORD")
+#SERVICENOW_INSTANCE = os.getenv("SERVICENOW_INSTANCE")  
+#SERVICENOW_USER = os.getenv("SERVICENOW_USER")
+#SERVICENOW_PASSWORD = os.getenv("SERVICENOW_PASSWORD")
+SERVICENOW_INSTANCE = "dev183670" 
+SERVICENOW_USER = "admin"
+SERVICENOW_PASSWORD ="at^MufBR4G-6"
 
 # === FLASK APP SETUP ===
 app = Flask(__name__)
@@ -49,10 +52,15 @@ def find_fix(keywords, repo_path="./docs"):
 def create_servicenow_ticket(description):
     url = f"https://{SERVICENOW_INSTANCE}.service-now.com/api/now/table/incident"
 
+#    headers = {
+#        "Content-Type": "application/json",
+#        "Accept": "application/json"
+#    }
     headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-    }
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+}
 
     payload = {
         "short_description": "Issue auto-created by chatbot",
