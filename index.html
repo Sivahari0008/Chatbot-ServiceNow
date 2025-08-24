@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Support Chatbot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    #chat-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #0078d7;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      font-size: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    #chat-popup {
+      display: none;
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 300px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      z-index: 1000;
+    }
+
+    #chat-header {
+      background-color: #0078d7;
+      color: white;
+      padding: 10px;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+      text-align: center;
+    }
+
+    #chat-body {
+      max-height: 250px;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .chat-message {
+      margin-bottom: 10px;
+    }
+
+    .user {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .bot {
+      color: #444;
+      background-color: #f1f1f1;
+      padding: 5px;
+      border-radius: 5px;
+    }
+
+    #chat-input {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+
+    #chat-input input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-bottom-left-radius: 10px;
+    }
+
+    #chat-input button {
+      padding: 10px;
+      background-color: #0078d7;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-bottom-right-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Welcome to Support</h2>
+  <p>Click the chat icon below to ask for help.</p>
+
+  <!-- Chat Button -->
+  <button id="chat-button">💬</button>
+
+  <!-- Chat Popup -->
+  <div id="chat-popup">
+    <div id="chat-header">Support Chatbot</div>
+    <div id="chat-body"></div>
+    <div id="chat-input">
+      <input type="text" id="user-input" placeholder="Type your question...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const chatButton = document.getElementById('chat-button');
+    const chatPopup = document.getElementById('chat-popup');
+    const chatBody = document.getElementById('chat-body');
+
+    chatButton.onclick = () => {
+      chatPopup.style.display = chatPopup.style.display === 'block' ? 'none' : 'block';
+    };
+
+    function appendMessage(sender, message) {
+      const msg = document.createElement('div');
+      msg.className = 'chat-message';
+      msg.innerHTML = `<div class="${sender}">${message}</div>`;
+      chatBody.appendChild(msg);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('user-input');
+      const question = input.value.trim();
+      if (!question) return;
+
+      appendMessage('user', question);
+      input.value = '';
+
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
+        });
+
+        const data = await res.json();
+
+        if (data.status === 'found') {
+          appendMessage('bot', `✅ Fix found:\n${data.fix}`);
+        } else if (data.status === 'ticket_created') {
+          appendMessage('bot', `❌ No solution found. Incident ticket created: ${data.ticket_number}`);
+        } else {
+          appendMessage('bot', `⚠️ Unexpected response: ${JSON.stringify(data)}`);
+        }
+
+      } catch (error) {
+        console.error(error);
+        appendMessage('bot', '⚠️ Error connecting to server.');
+      }
+    }
+  </script>
+
+</body>
+</html>
