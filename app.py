@@ -4,6 +4,7 @@ from flask import Flask, request, jsonify, send_from_directory
 import openai
 import requests
 from requests.auth import HTTPBasicAuth
+import re
 
 # === CONFIGURATION ===
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -20,22 +21,27 @@ app = Flask(__name__)
 
 # === UTILITY FUNCTIONS ===
 
+
+
 def extract_keywords(question):
-    """Uses OpenAI to extract relevant error keywords."""
     try:
         response = openai.ChatCompletion.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "Extract 2–4 keywords related to error or issue from user input."},
+                {"role": "system", "content": "Extract 2–4 single-word keywords (separated by commas) related to the error or issue from the user's input. Respond only with keywords."},
                 {"role": "user", "content": f"Extract keywords from: {question}"}
             ],
             temperature=0.2
         )
         content = response.choices[0].message['content']
-        return [kw.strip().lower() for kw in content.split(",")]
+        print("Extracted raw keyword content:", content)
+        
+        # Extract words using regex
+        return [kw.strip().lower() for kw in re.split(r",|\n", content) if kw.strip()]
     except Exception as e:
         print(f"OpenAI error: {e}")
         return []
+
 
 def find_fix(keywords, repo_path="./docs"):
     """Looks for a fix in the local /fixes folder."""
@@ -45,9 +51,13 @@ def find_fix(keywords, repo_path="./docs"):
             with open(filepath, "r") as f:
                 data = json.load(f)
                 error_keywords = [k.lower() for k in data.get("error_keywords", [])]
+                print(f"Checking {filename} with error_keywords: {error_keywords}")
                 if any(k in error_keywords for k in keywords):
+                    print(" Match found with:", keywords)
                     return data
+    print("No match found with keywords:", keywords)
     return None
+
     
 def create_servicenow_ticket(description):
     try:
