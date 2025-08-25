@@ -50,49 +50,26 @@ def find_fix(keywords, repo_path="./docs"):
     return None
     
 def create_servicenow_ticket(description):
-    url = f"https://{SERVICENOW_INSTANCE}.service-now.com/api/now/table/incident"
-
-#    headers = {
-#        "Content-Type": "application/json",
-#        "Accept": "application/json"
-#    }
-    headers = {
-    "Content-Type": "application/json",
-    "Accept": "application/json",
-    "Authorization": "Bearer YOUR_ACCESS_TOKEN"
-}
-
-    payload = {
-        "short_description": "Issue auto-created by chatbot",
-        "description": description,
-        "category": "inquiry"
-    }
-
     try:
-        print("Sending request to ServiceNow...")
-        print("URL:", url)
-        print("Payload:", payload)
-        print("User:", SERVICENOW_USER)
+        url = f"https://{SERVICENOW_INSTANCE}.service-now.com/api/now/table/incident"
+        headers = {"Content-Type": "application/json", "Accept": "application/json"}
+        payload = {"short_description": description}
 
         response = requests.post(
             url,
             auth=HTTPBasicAuth(SERVICENOW_USER, SERVICENOW_PASSWORD),
             headers=headers,
-            json=payload,
-            timeout=10  # optional timeout
+            json=payload
         )
 
-        print("Response Status:", response.status_code)
-        print("Response Body:", response.text)
-
-        if response.status_code == 201:
-            return response.json()["result"]["number"]
-        else:
-            return f"ServiceNow error: {response.status_code} - {response.text}"
-    except requests.exceptions.RequestException as e:
-        print("Request Exception:", e)
-        return f"Exception during ticket creation: {str(e)}"
-
+        response.raise_for_status()
+        data = response.json()
+        return {
+            "number": data["result"]["number"],
+            "sys_id": data["result"]["sys_id"]
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 
 # === ROUTES ===
@@ -101,31 +78,36 @@ def create_servicenow_ticket(description):
 def home():
     return send_from_directory(".", "index.html")
 
-
 @app.route("/chat", methods=["POST"])
 def chat():
-    data = request.get_json()
-    user_question = data.get("question", "")
-    
-    if not user_question:
-        return jsonify({"error": "Missing 'question' in request."}), 400
+    try:
+        data = request.get_json()
+        question = data.get("message", "")
+        
+        if not question:
+            return jsonify({"error": "No message provided"}), 400
 
-    keywords = extract_keywords(user_question)
-    fix = find_fix(keywords)
+        keywords = extract_keywords(question)
+        fix_data = find_fix(keywords)
 
-    if fix:
-        return jsonify({
-            "status": "found",
-            "message": "Fix found for your issue.",
-            "fix": fix["fix"]
-        })
-    else:
-        ticket_id = create_servicenow_ticket(user_question)
-        return jsonify({
-            "status": "ticket_created",
-            "message": "No solution found. A ticket has been created.",
-            "ticket_number": ticket_id
-        })
+        if fix_data:
+            # Fix found in local JSON
+            return jsonify({
+                "source": "local",
+                "description": fix_data.get("description"),
+                "fix": fix_data.get("fix")
+            })
+        else:
+            # No fix found; create a ServiceNow ticket
+            ticket_response = create_servicenow_ticket(description=question)
+            return jsonify({
+                "source": "servicenow",
+                "message": "No local fix found. Created ServiceNow ticket.",
+                "ticket": ticket_response
+            })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # === MAIN ===
 
