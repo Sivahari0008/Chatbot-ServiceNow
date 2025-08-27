@@ -34,10 +34,13 @@ def extract_keywords(question):
             temperature=0.2
         )
         content = response.choices[0].message['content']
-        print("Extracted raw keyword content:", content)
+        content = re.sub(r'(?i)^keywords?:', '', content)  # Remove "Keywords:" prefix
+        return [kw.strip().lower() for kw in re.split(r",|\n", content) if kw.strip()]
+        #content = response.choices[0].message['content']
+        #print("Extracted raw keyword content:", content)
         
         # Extract words using regex
-        return [kw.strip().lower() for kw in re.split(r",|\n", content) if kw.strip()]
+        #return [kw.strip().lower() for kw in re.split(r",|\n", content) if kw.strip()]
     except Exception as e:
         print(f"OpenAI error: {e}")
         return []
@@ -52,7 +55,8 @@ def find_fix(keywords, repo_path="./docs"):
                 data = json.load(f)
                 error_keywords = [k.lower() for k in data.get("error_keywords", [])]
                 print(f"Checking {filename} with error_keywords: {error_keywords}")
-                if any(k in error_keywords for k in keywords):
+                if set(keywords) & set(error_keywords):
+                #if any(k in error_keywords for k in keywords):
                     print(" Match found with:", keywords)
                     return data
     print("No match found with keywords:", keywords)
