@@ -81,7 +81,7 @@ def find_fix(keywords, repo_path="./docs"):
 @app.route("/create_servicenow_ticket", methods=["POST"])    
 def create_servicenow_ticket(description):
 
-
+        
 try:
         data = request.get_json()
         name = data.get("name")
@@ -115,6 +115,7 @@ try:
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 # === ROUTES ===
