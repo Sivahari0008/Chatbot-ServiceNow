@@ -83,8 +83,14 @@ def create_servicenow_ticket(description):
     try:
         url = f"https://{SERVICENOW_INSTANCE}.service-now.com/api/now/table/incident"
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
-        payload = {"short_description": description}
+        data = request.get_json()
+        description = f"{data.get('description')}\n\nReported by: {data.get('name')} ({data.get('email')})"
 
+        payload = {
+            "short_description": data.get("short_description"),
+            "description": description
+        }
+            
         response = requests.post(
             url,
             auth=HTTPBasicAuth(SERVICENOW_USER, SERVICENOW_PASSWORD),
