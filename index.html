@@ -87,6 +87,11 @@
       cursor: pointer;
       border-bottom-right-radius: 10px;
     }
+    .bot ul {
+  margin: 5px 0 5px 20px;
+  padding: 0;
+}
+
   </style>
 </head>
 <body>
@@ -143,8 +148,12 @@
 
         const data = await res.json();
 
-        if (data.status === 'found') {
-          appendMessage('bot', `✅ Fix found:\n${data.fix}`);
+        if (data.status === 'found') {          
+          if (data.fix) {
+              const fixLines = data.fix.split('\n').filter(line => line.trim() !== '');
+              const bulletPoints = fixLines.map(line => `<li>${line.replace(/^\d+\.\s*/, '')}</li>`).join('');
+              appendMessage('bot', `✅ Fix found:<ul>${bulletPoints}</ul>`);
+            }
         } else if (data.status === 'ticket_created') {
           appendMessage('bot', `❌ No solution found. Incident ticket created: ${data.ticket_number}`);
         } else {
