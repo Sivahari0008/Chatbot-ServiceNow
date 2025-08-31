@@ -89,23 +89,45 @@ def create_servicenow_ticket():
 
         full_description = f"{long_desc}\n\nReported by: {name} ({email})"
 
-        url = f"https://{SERVICENOW_INSTANCE}.service-now.com/api/now/table/incident"
-        headers = {"Content-Type": "application/json", "Accept": "application/json"}
+        # === STEP 1: Get caller sys_id from sys_user table ===
+        user_url = f"https://{SERVICENOW_INSTANCE}.service-now.com/api/now/table/sys_user"
+        user_headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
+        user_params = {"sysparm_query": f"name={name}", "sysparm_limit": 1}
 
-        payload = {
+        user_response = requests.get(
+            user_url,
+            auth=HTTPBasicAuth(SERVICENOW_USER, SERVICENOW_PASSWORD),
+            headers=user_headers,
+            params=user_params
+        )
+        user_response.raise_for_status()
+        users = user_response.json().get("result", [])
+        if not users:
+            return jsonify({"error": f"No user found with name '{name}'"}), 400
+
+        caller_sys_id = users[0]["sys_id"]
+
+        # === STEP 2: Create the incident ===
+        incident_url = f"https://{SERVICENOW_INSTANCE}.service-now.com/api/now/table/incident"
+        incident_payload = {
             "short_description": short_desc,
-            "description": full_description
+            "description": full_description,
+            "caller_id": caller_sys_id
         }
 
-        response = requests.post(
-            url,
+        incident_response = requests.post(
+            incident_url,
             auth=HTTPBasicAuth(SERVICENOW_USER, SERVICENOW_PASSWORD),
-            headers=headers,
-            json=payload
+            headers=user_headers,
+            json=incident_payload
         )
 
-        response.raise_for_status()
-        result = response.json()
+        incident_response.raise_for_status()
+        result = incident_response.json()
+
         return jsonify({
             "number": result["result"]["number"],
             "sys_id": result["result"]["sys_id"]
@@ -113,6 +135,7 @@ def create_servicenow_ticket():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 # === ROUTES ===
 
 @app.route("/", methods=["GET"])
