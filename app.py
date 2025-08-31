@@ -139,13 +139,11 @@ def chat():
                 "fix": fix_data.get("fix")
             })
         else:
-            # No fix found; create a ServiceNow ticket
-            ticket_response = create_servicenow_ticket(description=question)
-            return jsonify({
-                "source": "servicenow",
-                "message": "No local fix found. Created ServiceNow ticket.",
-                "ticket": ticket_response
-            })
+            
+                return jsonify({
+    "source": "servicenow",
+    "message": "No local fix found."
+})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
   
