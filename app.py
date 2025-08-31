@@ -23,27 +23,42 @@ app = Flask(__name__)
 
 
 
-def extract_keywords(question):
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "Extract 2–4 single-word keywords (separated by commas) related to the error or issue from the user's input. Respond only with keywords."},
-                {"role": "user", "content": f"Extract keywords from: {question}"}
-            ],
-            temperature=0.2
-        )
-        content = response.choices[0].message['content']
-        content = re.sub(r'(?i)^keywords?:', '', content)  # Remove "Keywords:" prefix
-        return [kw.strip().lower() for kw in re.split(r",|\n", content) if kw.strip()]
-        #content = response.choices[0].message['content']
-        #print("Extracted raw keyword content:", content)
+# def extract_keywords(question):
+#     try:
+#         response = openai.ChatCompletion.create(
+#             model="gpt-4o",
+#             messages=[
+#                 {"role": "system", "content": "Extract 2–4 single-word keywords (separated by commas) related to the error or issue from the user's input. Respond only with keywords."},
+#                 {"role": "user", "content": f"Extract keywords from: {question}"}
+#             ],
+#             temperature=0.2
+#         )
+#         content = response.choices[0].message['content']
+#         content = re.sub(r'(?i)^keywords?:', '', content)  # Remove "Keywords:" prefix
+#         return [kw.strip().lower() for kw in re.split(r",|\n", content) if kw.strip()]
+#         #content = response.choices[0].message['content']
+#         #print("Extracted raw keyword content:", content)
         
-        # Extract words using regex
-        #return [kw.strip().lower() for kw in re.split(r",|\n", content) if kw.strip()]
-    except Exception as e:
-        print(f"OpenAI error: {e}")
-        return []
+#         # Extract words using regex
+#         #return [kw.strip().lower() for kw in re.split(r",|\n", content) if kw.strip()]
+#     except Exception as e:
+#         print(f"OpenAI error: {e}")
+#         return []
+
+def extract_keywords(question):
+    """Local fallback keyword extractor using basic NLP."""
+    stopwords = {
+        "i", "am", "have", "has", "had", "having", "is", "was", "are", "were",
+        "the", "a", "an", "to", "in", "on", "for", "with", "of", "and", "or",
+        "it", "this", "that", "my", "your", "you", "me", "we", "us", "do", "does",
+        "did", "at", "by", "as", "from", "but", "not", "be", "can", "could", "will",
+        "would", "should"
+    }
+
+    words = re.findall(r'\b\w+\b', question.lower())
+    keywords = [word for word in words if word not in stopwords]
+    return keywords[:4]  # Limit to top 4 keywords for matching
+
 
 
 def find_fix(keywords, repo_path="./docs"):
