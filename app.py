@@ -78,11 +78,9 @@ def find_fix(keywords, repo_path="./docs"):
     print("No match found with keywords:", keywords)
     return None
 
-@app.route("/create_servicenow_ticket", methods=["POST"])    
-def create_servicenow_ticket(description):
-
-        
-try:
+@app.route("/create_servicenow_ticket", methods=["POST"])
+def create_servicenow_ticket():
+    try:
         data = request.get_json()
         name = data.get("name")
         email = data.get("email")
@@ -115,9 +113,6 @@ try:
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-
 # === ROUTES ===
 
 @app.route("/", methods=["GET"])
@@ -153,10 +148,7 @@ def chat():
             })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-
-    
+  
 
 
 
