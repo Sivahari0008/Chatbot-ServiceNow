@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Support Chatbot</title>
   <style>
     body {
@@ -28,7 +28,7 @@
       position: fixed;
       bottom: 90px;
       right: 20px;
-      width: 300px;
+      width: 320px;
       background-color: #fff;
       border: 1px solid #ccc;
       border-radius: 10px;
@@ -46,7 +46,7 @@
     }
 
     #chat-body {
-      max-height: 250px;
+      max-height: 300px;
       overflow-y: auto;
       padding: 10px;
     }
@@ -93,6 +93,11 @@
       padding: 0;
     }
 
+    .bot strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
     .bot input, .bot textarea {
       width: 90%;
       margin-bottom: 8px;
@@ -130,6 +135,7 @@
     </div>
   </div>
 
+  <!-- JavaScript -->
   <script>
     const chatButton = document.getElementById('chat-button');
     const chatPopup = document.getElementById('chat-popup');
@@ -182,7 +188,7 @@
             responseHtml += data.fix;
           }
 
-          appendMessage('bot', `✅ Fix found:${responseHtml}`);
+          appendMessage('bot', `✅ Fix found: ${responseHtml}`);
 
         } else if (data.source === 'servicenow') {
           appendMessage('bot', `❌ No solution found. Would you like to create a support ticket?`);
@@ -203,8 +209,7 @@
           chatBody.appendChild(formDiv);
           chatBody.scrollTop = chatBody.scrollHeight;
 
-          const form = formDiv.querySelector('#ticket-form');
-          form.addEventListener('submit', function(e) {
+          document.getElementById('ticket-form').addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const name = document.getElementById('user-name').value.trim();
@@ -219,12 +224,37 @@
               description: longDesc
             };
 
-            fetch('/create_ticket', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(ticketData)
-            })
-            .then(res => res.json())
-            .then(result => {
+            try {
+              const response = await fetch('/create_ticket', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(ticketData)
+              });
+
+              const result = await response.json();
+
               if (result.number) {
-                appendMessage('bo
+                appendMessage('bot', `✅ Ticket created successfully: ${result.number}`);
+              } else {
+                appendMessage('bot', `⚠️ Failed to create ticket: ${JSON.stringify(result)}`);
+              }
+
+              formDiv.remove();
+            } catch (err) {
+              console.error(err);
+              appendMessage('bot', '⚠️ Error submitting the ticket.');
+            }
+          });
+        } else {
+          appendMessage('bot', `⚠️ Unexpected response: ${JSON.stringify(data)}`);
+        }
+
+      } catch (error) {
+        console.error(error);
+        appendMessage('bot', '⚠️ Error connecting to server.');
+      }
+    }
+  </script>
+
+</body>
+</html>
