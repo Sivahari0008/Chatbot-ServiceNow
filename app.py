@@ -89,39 +89,42 @@ def create_servicenow_ticket():
 
         full_description = f"{long_desc}\n\nReported by: {name} ({email})"
 
-        # === STEP 1: Get caller sys_id from sys_user table ===
+        caller_sys_id = None
+
+        # === Try to find user in ServiceNow by name ===
         user_url = f"https://{SERVICENOW_INSTANCE}.service-now.com/api/now/table/sys_user"
-        user_headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        }
+        headers = {"Content-Type": "application/json", "Accept": "application/json"}
         user_params = {"sysparm_query": f"name={name}", "sysparm_limit": 1}
 
         user_response = requests.get(
             user_url,
             auth=HTTPBasicAuth(SERVICENOW_USER, SERVICENOW_PASSWORD),
-            headers=user_headers,
+            headers=headers,
             params=user_params
         )
         user_response.raise_for_status()
         users = user_response.json().get("result", [])
-        if not users:
-            return jsonify({"error": f"No user found with name '{name}'"}), 400
 
-        caller_sys_id = users[0]["sys_id"]
+        if users:
+            caller_sys_id = users[0]["sys_id"]
+        else:
+            print(f"[Info] No caller found for name: {name}, proceeding without caller_id")
 
-        # === STEP 2: Create the incident ===
-        incident_url = f"https://{SERVICENOW_INSTANCE}.service-now.com/api/now/table/incident"
+        # === Create incident payload ===
         incident_payload = {
             "short_description": short_desc,
-            "description": full_description,
-            "caller_id": caller_sys_id
+            "description": full_description
         }
 
+        if caller_sys_id:
+            incident_payload["caller_id"] = caller_sys_id
+
+        # === Create incident ===
+        incident_url = f"https://{SERVICENOW_INSTANCE}.service-now.com/api/now/table/incident"
         incident_response = requests.post(
             incident_url,
             auth=HTTPBasicAuth(SERVICENOW_USER, SERVICENOW_PASSWORD),
-            headers=user_headers,
+            headers=headers,
             json=incident_payload
         )
 
