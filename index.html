@@ -225,7 +225,7 @@
             };
 
             try {
-              const response = await fetch('/create_ticket', {
+              const response = await fetch('/create_servicenow_ticket', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(ticketData)
