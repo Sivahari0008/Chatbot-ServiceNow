@@ -171,8 +171,71 @@
 
           appendMessage('bot', `✅ Fix found:${responseHtml}`);
 
-        } else if (data.source === 'servicenow') {
-          appendMessage('bot', `❌ No solution found. Incident ticket created: ${data.ticket?.number || 'N/A'}`);
+        } 
+        // else if (data.source === 'servicenow') {
+        //   appendMessage('bot', `❌ No solution found. Incident ticket created: ${data.ticket?.number || 'N/A'}`);
+          else if (data.source === 'servicenow') {
+  // Show message
+  appendMessage('bot', `❌ No solution found. Would you like to create a support ticket?`);
+
+  // Create form HTML
+  const formHTML = `
+    <form id="ticket-form" class="bot">
+      <label>Name:<br><input type="text" id="user-name" required></label><br>
+      <label>Email:<br><input type="email" id="user-email" required></label><br>
+      <label>Short Description:<br><input type="text" id="short-description" required></label><br>
+      <label>Detailed Description:<br><textarea id="long-description" required></textarea></label><br>
+      <button type="submit">Submit Ticket</button>
+    </form>
+  `;
+
+  const formDiv = document.createElement('div');
+  formDiv.className = 'chat-message';
+  formDiv.innerHTML = formHTML;
+  chatBody.appendChild(formDiv);
+  chatBody.scrollTop = chatBody.scrollHeight;
+
+  // Add form submission handler
+  document.getElementById('ticket-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const name = document.getElementById('user-name').value.trim();
+    const email = document.getElementById('user-email').value.trim();
+    const shortDesc = document.getElementById('short-description').value.trim();
+    const longDesc = document.getElementById('long-description').value.trim();
+
+    const ticketData = {
+      name,
+      email,
+      short_description: shortDesc,
+      description: longDesc
+    };
+
+    try {
+      const response = await fetch('/create_ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ticketData)
+      });
+
+      const result = await response.json();
+
+      if (result.number) {
+        appendMessage('bot', `✅ Ticket created successfully: ${result.number}`);
+      } else {
+        appendMessage('bot', `⚠️ Failed to create ticket: ${JSON.stringify(result)}`);
+      }
+
+      // Remove form after submission
+      formDiv.remove();
+
+    } catch (err) {
+      console.error(err);
+      appendMessage('bot', '⚠️ Error submitting the ticket.');
+    }
+  });
+}
+
         } else {
           appendMessage('bot', `⚠️ Unexpected response: ${JSON.stringify(data)}`);
         }
