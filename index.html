@@ -87,11 +87,16 @@
       cursor: pointer;
       border-bottom-right-radius: 10px;
     }
-    .bot ul {
-  margin: 5px 0 5px 20px;
-  padding: 0;
-}
 
+    .bot ul {
+      margin: 5px 0 5px 20px;
+      padding: 0;
+    }
+
+    .bot strong {
+      display: block;
+      margin-bottom: 5px;
+    }
   </style>
 </head>
 <body>
@@ -141,21 +146,33 @@
         const res = await fetch('/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-/*          body: JSON.stringify({ question }) */
           body: JSON.stringify({ message: question })
-
         });
 
         const data = await res.json();
 
-        if (data.status === 'found') {          
-          if (data.fix) {
-              const fixLines = data.fix.split('\n').filter(line => line.trim() !== '');
-              const bulletPoints = fixLines.map(line => `<li>${line.replace(/^\d+\.\s*/, '')}</li>`).join('');
-              appendMessage('bot', `✅ Fix found:<ul>${bulletPoints}</ul>`);
-            }
-        } else if (data.status === 'ticket_created') {
-          appendMessage('bot', `❌ No solution found. Incident ticket created: ${data.ticket_number}`);
+        if (data.source === 'local') {
+          let responseHtml = '';
+
+          if (data.description) {
+            responseHtml += `<strong>${data.description}</strong>`;
+          }
+
+          if (Array.isArray(data.fix)) {
+            const bulletPoints = data.fix.map(step => `<li>${step}</li>`).join('');
+            responseHtml += `<ul>${bulletPoints}</ul>`;
+          } else if (typeof data.fix === 'string') {
+            const lines = data.fix.split('\n').filter(line => line.trim());
+            const bulletPoints = lines.map(line => `<li>${line.replace(/^\d+\.\s*/, '')}</li>`).join('');
+            responseHtml += `<ul>${bulletPoints}</ul>`;
+          } else {
+            responseHtml += data.fix;
+          }
+
+          appendMessage('bot', `✅ Fix found:${responseHtml}`);
+
+        } else if (data.source === 'servicenow') {
+          appendMessage('bot', `❌ No solution found. Incident ticket created: ${data.ticket?.number || 'N/A'}`);
         } else {
           appendMessage('bot', `⚠️ Unexpected response: ${JSON.stringify(data)}`);
         }
