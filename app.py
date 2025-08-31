@@ -78,19 +78,27 @@ def find_fix(keywords, repo_path="./docs"):
     print("No match found with keywords:", keywords)
     return None
 
-    
+@app.route("/create_servicenow_ticket", methods=["POST"])    
 def create_servicenow_ticket(description):
-    try:
+
+
+try:
+        data = request.get_json()
+        name = data.get("name")
+        email = data.get("email")
+        short_desc = data.get("short_description")
+        long_desc = data.get("description")
+
+        full_description = f"{long_desc}\n\nReported by: {name} ({email})"
+
         url = f"https://{SERVICENOW_INSTANCE}.service-now.com/api/now/table/incident"
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
-        data = request.get_json()
-        description = f"{data.get('description')}\n\nReported by: {data.get('name')} ({data.get('email')})"
 
         payload = {
-            "short_description": data.get("short_description"),
-            "description": description
+            "short_description": short_desc,
+            "description": full_description
         }
-            
+
         response = requests.post(
             url,
             auth=HTTPBasicAuth(SERVICENOW_USER, SERVICENOW_PASSWORD),
@@ -99,13 +107,14 @@ def create_servicenow_ticket(description):
         )
 
         response.raise_for_status()
-        data = response.json()
-        return {
-            "number": data["result"]["number"],
-            "sys_id": data["result"]["sys_id"]
-        }
+        result = response.json()
+        return jsonify({
+            "number": result["result"]["number"],
+            "sys_id": result["result"]["sys_id"]
+        })
+
     except Exception as e:
-        return {"error": str(e)}
+        return jsonify({"error": str(e)}), 500
 
 
 # === ROUTES ===
@@ -143,6 +152,11 @@ def chat():
             })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+
+    
+
 
 
 # === MAIN ===
