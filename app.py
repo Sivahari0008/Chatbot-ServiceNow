@@ -6,6 +6,9 @@ import requests
 from requests.auth import HTTPBasicAuth
 import re
 
+from genai_utils import translate_to_english, extract_keywords_gpt
+
+
 # === CONFIGURATION ===
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -145,6 +148,8 @@ def create_servicenow_ticket():
 def home():
     return send_from_directory(".", "index.html")
 
+
+  
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
@@ -154,25 +159,29 @@ def chat():
         if not question:
             return jsonify({"error": "No message provided"}), 400
 
-        keywords = extract_keywords(question)
+        # Step 1: Translate to English (if needed)
+        translated = translate_to_english(question)
+
+        # Step 2: Extract keywords via GPT
+        keywords = extract_keywords_gpt(translated)
+
+        # Step 3: Search local knowledge base
         fix_data = find_fix(keywords)
 
         if fix_data:
-            # Fix found in local JSON
             return jsonify({
                 "source": "local",
                 "description": fix_data.get("description"),
                 "fix": fix_data.get("fix")
             })
         else:
-            
-                return jsonify({
-    "source": "servicenow",
-    "message": "No local fix found."
-})
+            return jsonify({
+                "source": "servicenow",
+                "message": "No local fix found."
+            })
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-  
 
 
 
