@@ -18,6 +18,9 @@ sentence-transformers  # Needed for KeyBERT
 faiss-cpu              # For vector search (CPU version)
 langchain
 huggingface-hub
+langchain>=0.1.17
+langchain-community>=0.0.10
+
 
 # === Document Parsing (optional) ===
 tqdm                   # For progress bars when indexing docs
