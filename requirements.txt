@@ -1,3 +1,30 @@
+#flask
+#openai
+#requests
+
+# === Flask APIs ===
 flask
-openai
+
+# === Translation + Language Detection ===
+transformers
+torch
+langdetect
+
+# === Keyword Extraction ===
+keybert
+sentence-transformers  # Needed for KeyBERT
+
+# === Semantic Search ===
+faiss-cpu              # For vector search (CPU version)
+langchain
+huggingface-hub
+
+# === Document Parsing (optional) ===
+tqdm                   # For progress bars when indexing docs
+
+# === Networking ===
 requests
+
+# === Others ===
+scikit-learn           # Used internally by KeyBERT
+
