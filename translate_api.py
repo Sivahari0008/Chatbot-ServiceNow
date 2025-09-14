@@ -5,7 +5,6 @@ import warnings
 
 app = Flask(__name__)
 
-# Language → Model mapping
 LANG_MODEL_MAP = {
     'de': 'Helsinki-NLP/opus-mt-de-en',
     'fr': 'Helsinki-NLP/opus-mt-fr-en',
@@ -14,24 +13,20 @@ LANG_MODEL_MAP = {
     'ru': 'Helsinki-NLP/opus-mt-ru-en',
     'ar': 'Helsinki-NLP/opus-mt-ar-en',
     'nl': 'Helsinki-NLP/opus-mt-nl-en',
-    'ja': 'Helsinki-NLP/opus-mt-ja-en',
     'zh-cn': 'Helsinki-NLP/opus-mt-zh-en',
-    # Add more languages if needed
+    'ja': 'Helsinki-NLP/opus-mt-ja-en',
 }
 
-# Cache loaded models
 model_cache = {}
 
 def get_translator(lang_code):
     model_name = LANG_MODEL_MAP.get(lang_code)
     if not model_name:
-        raise ValueError(f"❌ No model available for language: {lang_code}")
+        raise ValueError(f"No translation model for: {lang_code}")
     
-    # Use cached model if available
     if model_name in model_cache:
         return model_cache[model_name]
-
-    # Load and cache the model
+    
     translator = pipeline("translation", model=model_name)
     model_cache[model_name] = translator
     return translator
@@ -43,27 +38,21 @@ def translate():
         text = data.get("text", "").strip()
 
         if not text:
-            return jsonify({"error": "Missing or empty 'text' parameter"}), 400
+            return jsonify({"error": "Text is empty"}), 400
 
-        # Detect language
-        detected_lang = detect(text)
-        print(f" Detected language: {detected_lang}")
-
-        # Translate using appropriate model
-        translator = get_translator(detected_lang)
+        lang = detect(text)
+        translator = get_translator(lang)
         result = translator(text)
-        translated_text = result[0]['translation_text']
+        translated = result[0]['translation_text']
 
         return jsonify({
-            "input_language": detected_lang,
-            "original_text": text,
-            "translated_text": translated_text
+            "input_language": lang,
+            "translated_text": translated
         })
 
     except Exception as e:
         warnings.warn(f"Translation failed: {e}")
         return jsonify({"error": str(e)}), 500
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
