@@ -5,8 +5,11 @@ from flask import Flask, request, jsonify, send_from_directory
 from transformers import pipeline
 from langdetect import detect
 from keybert import KeyBERT
-from langchain.vectorstores import FAISS
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
+#from langchain.vectorstores import FAISS
+#from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.docstore.document import Document
 
 app = Flask(__name__)
