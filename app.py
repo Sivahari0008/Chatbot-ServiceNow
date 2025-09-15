@@ -59,7 +59,9 @@ def translate_to_english(text):
 ### --- Document & FAISS Setup --- ###
 DOCS_DIR = "./docs"
 FAISS_INDEX_PATH = "faiss_index"
-embedding_model = HuggingFaceEmbeddings(model_name="paraphrase-MiniLM-L3-v2")
+#embedding_model = HuggingFaceEmbeddings(model_name="paraphrase-MiniLM-L3-v2")
+embedding_model = HuggingFaceEmbeddings(model_name="intfloat/e5-small-v2")
+
 
 def load_documents():
     docs = []
@@ -73,18 +75,28 @@ def load_documents():
     return docs
 
 # Build or load FAISS
-if os.path.exists(FAISS_INDEX_PATH):
-    try:
-        vectordb = FAISS.load_local(FAISS_INDEX_PATH, embedding_model)
-        print("✅ FAISS index loaded from disk.")
-    except Exception as e:
-        raise RuntimeError("❌ Failed to load FAISS index.") from e
-else:
-    print("⚠️ FAISS index not found. Building now...")
-    docs = load_documents()
-    vectordb = FAISS.from_documents(docs, embedding_model)
-    vectordb.save_local(FAISS_INDEX_PATH)
-    print("✅ FAISS index built and saved.")
+_vectordb = None
+
+def get_vectordb():
+    global _vectordb
+
+    if _vectordb is None:
+        if os.path.exists(FAISS_INDEX_PATH):
+            try:
+                _vectordb = FAISS.load_local(FAISS_INDEX_PATH, embedding_model)
+                print("✅ FAISS index loaded from disk.")
+            except Exception as e:
+                raise RuntimeError("❌ Failed to load FAISS index.") from e
+        else:
+            print("⚠️ FAISS index not found. Building now...")
+            docs = load_documents()
+            _vectordb = FAISS.from_documents(docs, embedding_model)
+            _vectordb.save_local(FAISS_INDEX_PATH)
+            print("✅ FAISS index built and saved.")
+    
+    return _vectordb
+
+    
 
 ### --- Routes --- ###
 @app.route("/", methods=["GET"])
