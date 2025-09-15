@@ -1,34 +1,12 @@
-#flask
-#openai
-#requests
-
-# === Flask APIs ===
 flask
-
-# === Translation + Language Detection ===
 transformers
 torch
 langdetect
-
-# === Keyword Extraction ===
-keybert
-sentence-transformers  # Needed for KeyBERT
-yake                   # <-- Add this line
-
-# === Semantic Search ===
-faiss-cpu              # For vector search (CPU version)
-langchain
-huggingface-hub
+yake
+faiss-cpu
 langchain>=0.1.17
 langchain-community>=0.0.10
-
-
-# === Document Parsing (optional) ===
-tqdm                   # For progress bars when indexing docs
-
-# === Networking ===
+huggingface-hub
+tqdm
 requests
-
-# === Others ===
-scikit-learn           # Used internally by KeyBERT
-
+scikit-learn
