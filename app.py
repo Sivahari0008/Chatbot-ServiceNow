@@ -11,14 +11,14 @@ from langchain.docstore.document import Document
 
 app = Flask(__name__)
 
-### Lightweight keyword extractor ###
+### --- Keyword extractor (lightweight) --- ###
 kw_extractor = yake.KeywordExtractor(n=1, top=4)
 
 def extract_keywords(text, top_n=4):
     keywords = kw_extractor.extract_keywords(text)
     return [kw[0] for kw in keywords[:top_n]]
 
-### Translation setup ###
+### --- Translation --- ###
 LANG_MODEL_MAP = {
     'de': 'Helsinki-NLP/opus-mt-de-en',
     'fr': 'Helsinki-NLP/opus-mt-fr-en',
@@ -56,16 +56,37 @@ def translate_to_english(text):
         warnings.warn(f"Translation failed: {e}")
         return text
 
-### Load FAISS DB at startup ###
-embedding_model = HuggingFaceEmbeddings(model_name="paraphrase-MiniLM-L3-v2")
+### --- Document & FAISS Setup --- ###
+DOCS_DIR = "./docs"
 FAISS_INDEX_PATH = "faiss_index"
+embedding_model = HuggingFaceEmbeddings(model_name="paraphrase-MiniLM-L3-v2")
 
-try:
-    vectordb = FAISS.load_local(FAISS_INDEX_PATH, embedding_model)
-except Exception as e:
-    raise RuntimeError("Could not load FAISS index. Ensure it's prebuilt.") from e
+def load_documents():
+    docs = []
+    for filename in os.listdir(DOCS_DIR):
+        if filename.endswith(".json"):
+            filepath = os.path.join(DOCS_DIR, filename)
+            with open(filepath, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                content = f"{data.get('description', '')}\n\n{data.get('fix', '')}"
+                docs.append(Document(page_content=content, metadata={"source": filename}))
+    return docs
 
-### Flask routes ###
+# Build or load FAISS
+if os.path.exists(FAISS_INDEX_PATH):
+    try:
+        vectordb = FAISS.load_local(FAISS_INDEX_PATH, embedding_model)
+        print("✅ FAISS index loaded from disk.")
+    except Exception as e:
+        raise RuntimeError("❌ Failed to load FAISS index.") from e
+else:
+    print("⚠️ FAISS index not found. Building now...")
+    docs = load_documents()
+    vectordb = FAISS.from_documents(docs, embedding_model)
+    vectordb.save_local(FAISS_INDEX_PATH)
+    print("✅ FAISS index built and saved.")
+
+### --- Routes --- ###
 @app.route("/", methods=["GET"])
 def home():
     return send_from_directory(".", "index.html")
@@ -86,7 +107,9 @@ def chat():
 
         if results:
             best = results[0]
-            description, fix = best.page_content.split("\n\n") if "\n\n" in best.page_content else (best.page_content, "")
+            parts = best.page_content.split("\n\n", 1)
+            description = parts[0]
+            fix = parts[1] if len(parts) > 1 else ""
             return jsonify({
                 "source": "local",
                 "description": description,
@@ -101,23 +124,6 @@ def chat():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-DOCS_DIR = "./docs"
-embedding_model = HuggingFaceEmbeddings(model_name="paraphrase-MiniLM-L3-v2")
-docs = load_documents()
-    vectordb = FAISS.from_documents(docs, embedding_model)
-    vectordb.save_local("faiss_index")
-
-def load_documents():
-    docs = []
-    for filename in os.listdir(DOCS_DIR):
-        if filename.endswith(".json"):
-            filepath = os.path.join(DOCS_DIR, filename)
-            with open(filepath, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                content = f"{data.get('description', '')}\n\n{data.get('fix', '')}"
-                docs.append(Document(page_content=content, metadata={"source": filename}))
-    return docs
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
