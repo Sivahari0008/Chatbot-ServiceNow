@@ -4,18 +4,21 @@ import warnings
 from flask import Flask, request, jsonify, send_from_directory
 from transformers import pipeline
 from langdetect import detect
-from keybert import KeyBERT
+import yake
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
-
-#from langchain.vectorstores import FAISS
-#from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.docstore.document import Document
 
 app = Flask(__name__)
 
-### Translation setup ###
+### Lightweight keyword extractor ###
+kw_extractor = yake.KeywordExtractor(n=1, top=4)
 
+def extract_keywords(text, top_n=4):
+    keywords = kw_extractor.extract_keywords(text)
+    return [kw[0] for kw in keywords[:top_n]]
+
+### Translation setup ###
 LANG_MODEL_MAP = {
     'de': 'Helsinki-NLP/opus-mt-de-en',
     'fr': 'Helsinki-NLP/opus-mt-fr-en',
@@ -27,17 +30,19 @@ LANG_MODEL_MAP = {
     'zh-cn': 'Helsinki-NLP/opus-mt-zh-en',
     'ja': 'Helsinki-NLP/opus-mt-ja-en',
 }
-model_cache = {}
+
+current_translator = None
+current_lang = None
 
 def get_translator(lang_code):
+    global current_translator, current_lang
     model_name = LANG_MODEL_MAP.get(lang_code)
     if not model_name:
         raise ValueError(f"No translation model for language code: {lang_code}")
-    if model_name in model_cache:
-        return model_cache[model_name]
-    translator = pipeline("translation", model=model_name)
-    model_cache[model_name] = translator
-    return translator
+    if current_lang != lang_code:
+        current_translator = pipeline("translation", model=model_name)
+        current_lang = lang_code
+    return current_translator
 
 def translate_to_english(text):
     try:
@@ -49,34 +54,18 @@ def translate_to_english(text):
         return result[0]['translation_text']
     except Exception as e:
         warnings.warn(f"Translation failed: {e}")
-        return text  # fallback to original
+        return text
 
-### Keyword extraction and document search setup ###
+### Load FAISS DB at startup ###
+embedding_model = HuggingFaceEmbeddings(model_name="paraphrase-MiniLM-L3-v2")
+FAISS_INDEX_PATH = "faiss_index"
 
-DOCS_DIR = "./docs"
-kw_model = KeyBERT()
-
-def extract_keywords(text, top_n=4):
-    keywords = kw_model.extract_keywords(text, keyphrase_ngram_range=(1, 1), stop_words='english', top_n=top_n)
-    return [kw[0] for kw in keywords]
-
-def load_documents():
-    docs = []
-    for filename in os.listdir(DOCS_DIR):
-        if filename.endswith(".json"):
-            filepath = os.path.join(DOCS_DIR, filename)
-            with open(filepath, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                content = f"{data.get('description', '')}\n\n{data.get('fix', '')}"
-                docs.append(Document(page_content=content, metadata={"source": filename}))
-    return docs
-
-def create_vector_db(documents):
-    embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    return FAISS.from_documents(documents, embedding_model)
+try:
+    vectordb = FAISS.load_local(FAISS_INDEX_PATH, embedding_model)
+except Exception as e:
+    raise RuntimeError("Could not load FAISS index. Ensure it's prebuilt.") from e
 
 ### Flask routes ###
-
 @app.route("/", methods=["GET"])
 def home():
     return send_from_directory(".", "index.html")
@@ -89,15 +78,10 @@ def chat():
         if not message:
             return jsonify({"error": "No message provided"}), 400
 
-        # Step 1: Translate to English
         translated_text = translate_to_english(message)
-
-        # Step 2: Extract keywords and search docs
         keywords = extract_keywords(translated_text)
         query = " ".join(keywords)
 
-        docs = load_documents()
-        vectordb = create_vector_db(docs)
         results = vectordb.similarity_search(query, k=1)
 
         if results:
@@ -117,6 +101,23 @@ def chat():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+DOCS_DIR = "./docs"
+embedding_model = HuggingFaceEmbeddings(model_name="paraphrase-MiniLM-L3-v2")
+docs = load_documents()
+    vectordb = FAISS.from_documents(docs, embedding_model)
+    vectordb.save_local("faiss_index")
+
+def load_documents():
+    docs = []
+    for filename in os.listdir(DOCS_DIR):
+        if filename.endswith(".json"):
+            filepath = os.path.join(DOCS_DIR, filename)
+            with open(filepath, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                content = f"{data.get('description', '')}\n\n{data.get('fix', '')}"
+                docs.append(Document(page_content=content, metadata={"source": filename}))
+    return docs
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
