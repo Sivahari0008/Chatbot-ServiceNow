@@ -13,6 +13,7 @@ langdetect
 # === Keyword Extraction ===
 keybert
 sentence-transformers  # Needed for KeyBERT
+yake                   # <-- Add this line
 
 # === Semantic Search ===
 faiss-cpu              # For vector search (CPU version)
