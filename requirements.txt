@@ -10,3 +10,4 @@ huggingface-hub
 tqdm
 requests
 scikit-learn
+sentence-transformers
