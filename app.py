@@ -6,8 +6,12 @@ from transformers import pipeline
 from langdetect import detect
 import yake
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
+
 from langchain.docstore.document import Document
+from langchain_huggingface import HuggingFaceEmbeddings
+
+# Use a lightweight model
+
 
 app = Flask(__name__)
 
@@ -60,7 +64,11 @@ def translate_to_english(text):
 DOCS_DIR = "./docs"
 FAISS_INDEX_PATH = "faiss_index"
 #embedding_model = HuggingFaceEmbeddings(model_name="paraphrase-MiniLM-L3-v2")
-embedding_model = HuggingFaceEmbeddings(model_name="intfloat/e5-small-v2")
+#embedding_model = HuggingFaceEmbeddings(model_name="intfloat/e5-small-v2")
+embedding_model = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/paraphrase-MiniLM-L3-v2",
+    model_kwargs={"device": "cpu"}  # optional: avoid GPU memory issues
+)
 
 
 def load_documents():
