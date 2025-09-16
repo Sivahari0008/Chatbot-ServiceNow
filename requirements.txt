@@ -1,13 +1,5 @@
 flask
-transformers
-torch
+openai
+requests
 langdetect
-yake
-faiss-cpu
-langchain>=0.2.2
-langchain-huggingface>=0.3.0
-huggingface-hub>=0.20.3
-tqdm
-requests==2.32.4
-scikit-learn
-sentence-transformers>=2.6.1
+transformers
