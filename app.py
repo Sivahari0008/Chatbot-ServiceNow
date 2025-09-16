@@ -206,6 +206,11 @@ def chat():
         #keywords = extract_keywords(question)
         #fix_data = find_fix(keywords)
 
+        response = {
+            "translated": translated_question,
+            "keywords": keywords,
+        }
+
         if fix_data:
             # Fix found in local JSON
             return jsonify({
