@@ -4,8 +4,8 @@ torch
 langdetect
 yake
 faiss-cpu
-langchain>=0.1.17
-langchain-community>=0.0.10
+langchain>=0.1.17,<0.2.2  # Avoid versions where HuggingFaceEmbeddings is removed
+langchain-huggingface>=0.0.5
 huggingface-hub>=0.20.3
 tqdm
 requests==2.32.4
