@@ -220,8 +220,6 @@ def chat():
                 return jsonify({
     "source": "servicenow",
     "message": "No local fix found",
-    "translated": translated_question,
-            "keywords": keywords,
         
 })
     except Exception as e:
