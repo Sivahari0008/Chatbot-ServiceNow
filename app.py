@@ -5,6 +5,7 @@ import openai
 import requests
 from requests.auth import HTTPBasicAuth
 import re
+import torch
 from langdetect import detect
 from transformers import pipeline
 import warnings
