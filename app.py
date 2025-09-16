@@ -86,17 +86,19 @@ def get_translator(lang_code):
         return current_translator
         
 def translate_to_english(text):
-        try: lang = detect(text).lower()
-                # Normalize to just 'de', 'fr', etc.
-                lang = lang.split("-")[0]
-                if lang == "en": 
-                        return text
-                translator = get_translator(lang)
-                result = translator(text)
-                return result[0]['translation_text']
-        except Exception as e:
-                warnings.warn(f"Translation failed: {e}")
-                return text
+    try:
+        lang = detect(text).lower()
+        # Normalize to just 'de', 'fr', etc.
+        lang = lang.split("-")[0]
+        if lang == "en":
+            return text
+        translator = get_translator(lang)
+        result = translator(text)
+        return result[0]['translation_text']
+    except Exception as e:
+        warnings.warn(f"Translation failed: {e}")
+        return text
+
 
 def find_fix(keywords, repo_path="./docs"):
     """Looks for a fix in the local /fixes folder."""
