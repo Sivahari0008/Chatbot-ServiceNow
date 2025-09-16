@@ -88,9 +88,14 @@ def get_translator(lang_code):
         current_lang = lang_code
     return current_translator
 
+
 def translate_to_english(text):
     try:
-        lang = detect(text)
+        lang = detect(text).lower()
+
+        # Normalize to just 'de', 'fr', etc.
+        lang = lang.split("-")[0]
+
         if lang == "en":
             return text
         translator = get_translator(lang)
