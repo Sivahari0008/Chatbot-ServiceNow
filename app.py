@@ -5,7 +5,7 @@ import openai
 import requests
 from requests.auth import HTTPBasicAuth
 import re
-import torch
+
 from langdetect import detect
 from transformers import pipeline
 import warnings
@@ -63,45 +63,40 @@ def extract_keywords(question):
     keywords = [word for word in words if word not in stopwords]
     return keywords[:4]  # Limit to top 4 keywords for matching
 
-# === Translation Setup ===
-LANG_MODEL_MAP = {
-    'de': 'Helsinki-NLP/opus-mt-de-en',
-    'fr': 'Helsinki-NLP/opus-mt-fr-en',
-    'es': 'Helsinki-NLP/opus-mt-es-en',
-    'it': 'Helsinki-NLP/opus-mt-it-en',
-    'ru': 'Helsinki-NLP/opus-mt-ru-en',
-    'ar': 'Helsinki-NLP/opus-mt-ar-en',
-    'nl': 'Helsinki-NLP/opus-mt-nl-en',
-    'zh-cn': 'Helsinki-NLP/opus-mt-zh-en',
-    'ja': 'Helsinki-NLP/opus-mt-ja-en',
-}
-
+### --- Translation --- ### 
+LANG_MODEL_MAP = { 'de': 'Helsinki-NLP/opus-mt-de-en', 
+                  'fr': 'Helsinki-NLP/opus-mt-fr-en',
+                  'es': 'Helsinki-NLP/opus-mt-es-en',
+                  'it': 'Helsinki-NLP/opus-mt-it-en', 
+                  'ru': 'Helsinki-NLP/opus-mt-ru-en',
+                  'ar': 'Helsinki-NLP/opus-mt-ar-en',
+                  'nl': 'Helsinki-NLP/opus-mt-nl-en',
+                  'zh-cn': 'Helsinki-NLP/opus-mt-zh-en',
+                  'ja': 'Helsinki-NLP/opus-mt-ja-en', }
 current_translator = None
 current_lang = None
-
 def get_translator(lang_code):
-    global current_translator, current_lang
-    model_name = LANG_MODEL_MAP.get(lang_code)
-    if not model_name:
-        raise ValueError(f"No translation model for language code: {lang_code}")
-    if current_lang != lang_code:
-        print(f"Loading model for language: {lang_code}...")
-        current_translator = pipeline("translation", model=model_name)
-        current_lang = lang_code
-    return current_translator
-
+        global current_translator, current_lang
+        model_name = LANG_MODEL_MAP.get(lang_code)
+        if not model_name:
+                raise ValueError(f"No translation model for language code: {lang_code}")
+        if current_lang != lang_code:
+                current_translator = pipeline("translation", model=model_name)
+                current_lang = lang_code
+        return current_translator
+        
 def translate_to_english(text):
-    try:
-        lang = detect(text)
-        print(f"Detected language: {lang}")
-        if lang == "en":
-            return text
-        translator = get_translator(lang)
-        result = translator(text)
-        return result[0]['translation_text']
-    except Exception as e:
-        warnings.warn(f"Translation failed: {e}")
-        return text
+        try: lang = detect(text).lower()
+                # Normalize to just 'de', 'fr', etc.
+                lang = lang.split("-")[0]
+                if lang == "en": 
+                        return text
+                translator = get_translator(lang)
+                result = translator(text)
+                return result[0]['translation_text']
+        except Exception as e:
+                warnings.warn(f"Translation failed: {e}")
+                return text
 
 def find_fix(keywords, repo_path="./docs"):
     """Looks for a fix in the local /fixes folder."""
