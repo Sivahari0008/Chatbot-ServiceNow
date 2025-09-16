@@ -206,10 +206,7 @@ def chat():
         #keywords = extract_keywords(question)
         #fix_data = find_fix(keywords)
 
-        response = {
-            "translated": translated_question,
-            "keywords": keywords,
-        }
+        
 
         if fix_data:
             # Fix found in local JSON
@@ -222,7 +219,10 @@ def chat():
             
                 return jsonify({
     "source": "servicenow",
-    "message": "No local fix found."
+    "message": "No local fix found",
+    "translated": translated_question,
+            "keywords": keywords,
+        
 })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
