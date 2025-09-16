@@ -62,7 +62,7 @@ def extract_keywords(question):
     keywords = [word for word in words if word not in stopwords]
     return keywords[:4]  # Limit to top 4 keywords for matching
 
-### --- Translation --- ###
+# === Translation Setup ===
 LANG_MODEL_MAP = {
     'de': 'Helsinki-NLP/opus-mt-de-en',
     'fr': 'Helsinki-NLP/opus-mt-fr-en',
@@ -84,18 +84,15 @@ def get_translator(lang_code):
     if not model_name:
         raise ValueError(f"No translation model for language code: {lang_code}")
     if current_lang != lang_code:
+        print(f"Loading model for language: {lang_code}...")
         current_translator = pipeline("translation", model=model_name)
         current_lang = lang_code
     return current_translator
 
-
 def translate_to_english(text):
     try:
-        lang = detect(text).lower()
-
-        # Normalize to just 'de', 'fr', etc.
-        lang = lang.split("-")[0]
-
+        lang = detect(text)
+        print(f"Detected language: {lang}")
         if lang == "en":
             return text
         translator = get_translator(lang)
@@ -104,9 +101,6 @@ def translate_to_english(text):
     except Exception as e:
         warnings.warn(f"Translation failed: {e}")
         return text
-
-
-
 
 def find_fix(keywords, repo_path="./docs"):
     """Looks for a fix in the local /fixes folder."""
