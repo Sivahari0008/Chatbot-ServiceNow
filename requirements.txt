@@ -6,8 +6,8 @@ yake
 faiss-cpu
 langchain>=0.1.17
 langchain-community>=0.0.10
-huggingface-hub
+huggingface-hub>=0.20.3
 tqdm
-requests
+requests==2.32.4
 scikit-learn
-sentence-transformers==2.2.2
+sentence-transformers>=2.6.1
