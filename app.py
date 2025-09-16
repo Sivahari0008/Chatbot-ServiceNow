@@ -88,16 +88,29 @@ def get_translator(lang_code):
 def translate_to_english(text):
     try:
         lang = detect(text).lower()
-        # Normalize to just 'de', 'fr', etc.
+        print(f"[Translation] Detected language: {lang}")
+        
         lang = lang.split("-")[0]
+
         if lang == "en":
             return text
+        
+        model_name = LANG_MODEL_MAP.get(lang)
+        if not model_name:
+            print(f"[Translation] No model found for language code: {lang}")
+            return text
+        
+        print(f"[Translation] Using model: {model_name}")
         translator = get_translator(lang)
         result = translator(text)
+        print(f"[Translation] Result: {result}")
         return result[0]['translation_text']
+    
     except Exception as e:
         warnings.warn(f"Translation failed: {e}")
+        print(f"[Translation ERROR] {e}")
         return text
+
 
 
 def find_fix(keywords, repo_path="./docs"):
