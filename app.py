@@ -6,6 +6,10 @@ import requests
 from requests.auth import HTTPBasicAuth
 import re
 
+from langdetect import detect
+from transformers import pipeline
+import warnings
+
 # === CONFIGURATION ===
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
