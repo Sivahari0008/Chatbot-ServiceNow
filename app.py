@@ -61,7 +61,7 @@ def extract_keywords(question):
 
 
 
-def find_best_fix(search_phrase, repo_path="./docs"):
+def find_fix(keywords, repo_path="./docs"):
     # Convert input phrase into keywords (split by non-alphanumeric chars and lowercase)
     keywords = set(re.findall(r'\w+', search_phrase.lower()))
     
