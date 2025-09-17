@@ -61,22 +61,38 @@ def extract_keywords(question):
 
 
 
-def find_fix(keywords, repo_path="./docs"):
-    """Looks for a fix in the local /fixes folder."""
+def find_best_fix(search_phrase, repo_path="./docs"):
+    # Convert input phrase into keywords (split by non-alphanumeric chars and lowercase)
+    keywords = set(re.findall(r'\w+', search_phrase.lower()))
+    
+    best_match = None
+    max_matches = 0
+    
     for filename in os.listdir(repo_path):
         if filename.endswith(".json"):
             filepath = os.path.join(repo_path, filename)
             with open(filepath, "r") as f:
                 data = json.load(f)
-                error_keywords = [k.lower() for k in data.get("error_keywords", [])]
+                error_keywords = set(k.lower() for k in data.get("error_keywords", []))
                 
                 print(f"Checking {filename} with error_keywords: {error_keywords}")
-                if set(keywords) & set(error_keywords):
-                #if any(k in error_keywords for k in keywords):
-                    print(" Match found with:", keywords)
-                    return data
-    print("No match found with keywords:", keywords)
-    return None
+                
+                # Calculate number of matched keywords
+                matches = len(keywords & error_keywords)
+                
+                print(f"Matched keywords count: {matches}")
+                
+                # Keep track of the file with the most matches
+                if matches > max_matches:
+                    max_matches = matches
+                    best_match = data
+                    
+    if best_match:
+        print(f"Best match found with {max_matches} keywords matched.")
+        return best_match
+    else:
+        print("No match found.")
+        return None
 
 
 @app.route("/create_servicenow_ticket", methods=["POST"])
