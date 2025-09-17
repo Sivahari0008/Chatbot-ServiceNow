@@ -60,10 +60,10 @@ def extract_keywords(question):
     return keywords[:4]  # Limit to top 4 keywords for matching
 
 
-
 def find_fix(keywords, repo_path="./docs"):
-    # Convert input phrase into keywords (split by non-alphanumeric chars and lowercase)
-    keywords = set(re.findall(r'\w+', search_phrase.lower()))
+    """Looks for a fix in the local /fixes folder."""
+    
+    keywords = set(k.lower() for k in keywords)  # Normalize input keywords
     
     best_match = None
     max_matches = 0
@@ -77,22 +77,20 @@ def find_fix(keywords, repo_path="./docs"):
                 
                 print(f"Checking {filename} with error_keywords: {error_keywords}")
                 
-                # Calculate number of matched keywords
+                # Find intersection count
                 matches = len(keywords & error_keywords)
                 
-                print(f"Matched keywords count: {matches}")
-                
-                # Keep track of the file with the most matches
                 if matches > max_matches:
                     max_matches = matches
                     best_match = data
-                    
+    
     if best_match:
         print(f"Best match found with {max_matches} keywords matched.")
         return best_match
     else:
-        print("No match found.")
+        print("No match found with keywords:", keywords)
         return None
+
 
 
 @app.route("/create_servicenow_ticket", methods=["POST"])
