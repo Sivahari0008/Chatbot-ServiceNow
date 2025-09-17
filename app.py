@@ -45,7 +45,7 @@ app = Flask(__name__)
 #         print(f"OpenAI error: {e}")
 #         return []
 
-def extract_keywords(question):
+def extract_keywords(text):
     """Local fallback keyword extractor using basic NLP."""
     stopwords = {
         "i", "am", "have", "has", "had", "having", "is", "was", "are", "were",
@@ -58,6 +58,55 @@ def extract_keywords(question):
     words = re.findall(r'\b\w+\b', question.lower())
     keywords = [word for word in words if word not in stopwords]
     return keywords[:4]  # Limit to top 4 keywords for matching
+
+### --- Translation --- ### 
+LANG_MODEL_MAP = { 'de': 'Helsinki-NLP/opus-mt-de-en', 
+                  'fr': 'Helsinki-NLP/opus-mt-fr-en',
+                  'es': 'Helsinki-NLP/opus-mt-es-en',
+                  'it': 'Helsinki-NLP/opus-mt-it-en', 
+                  'ru': 'Helsinki-NLP/opus-mt-ru-en',
+                  'ar': 'Helsinki-NLP/opus-mt-ar-en',
+                  'nl': 'Helsinki-NLP/opus-mt-nl-en',
+                  'zh-cn': 'Helsinki-NLP/opus-mt-zh-en',
+                  'ja': 'Helsinki-NLP/opus-mt-ja-en', }
+current_translator = None
+current_lang = None
+def get_translator(lang_code):
+        global current_translator, current_lang
+        model_name = LANG_MODEL_MAP.get(lang_code)
+        if not model_name:
+                raise ValueError(f"No translation model for language code: {lang_code}")
+        if current_lang != lang_code:
+                current_translator = pipeline("translation", model=model_name)
+                current_lang = lang_code
+        return current_translator
+        
+def translate_to_english(text):
+    try:
+        lang = detect(text).lower()
+        print(f"[Translation] Detected language: {lang}")
+        
+        lang = lang.split("-")[0]
+
+        if lang == "en":
+            return text
+        
+        model_name = LANG_MODEL_MAP.get(lang)
+        if not model_name:
+            print(f"[Translation] No model found for language code: {lang}")
+            return text
+        
+        print(f"[Translation] Using model: {model_name}")
+        translator = get_translator(lang)
+        result = translator(text)
+        print(f"[Translation] Result: {result}")
+        return result[0]['translation_text']
+    
+    except Exception as e:
+        warnings.warn(f"Translation failed: {e}")
+        print(f"[Translation ERROR] {e}")
+        return text
+
 
 
 def find_fix(keywords, repo_path="./docs"):
