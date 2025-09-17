@@ -69,7 +69,7 @@ def find_fix(keywords, repo_path="./docs"):
             with open(filepath, "r") as f:
                 data = json.load(f)
                 error_keywords = [k.lower() for k in data.get("error_keywords", [])]
-                error_keywords = ["database","connection","timeout"]
+                
                 print(f"Checking {filename} with error_keywords: {error_keywords}")
                 if set(keywords) & set(error_keywords):
                 #if any(k in error_keywords for k in keywords):
@@ -77,6 +77,7 @@ def find_fix(keywords, repo_path="./docs"):
                     return data
     print("No match found with keywords:", keywords)
     return None
+
 
 @app.route("/create_servicenow_ticket", methods=["POST"])
 def create_servicenow_ticket():
