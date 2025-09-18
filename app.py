@@ -59,7 +59,7 @@ def extract_keywords(text):
         "would", "should"
     }
 
-    words = re.findall(r'\b\w+\b', question.lower())
+    words = re.findall(r'\b\w+\b', text.lower())
     keywords = [word for word in words if word not in stopwords]
     return keywords[:4]  # Limit to top 4 keywords for matching
 
