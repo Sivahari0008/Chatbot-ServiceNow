@@ -232,6 +232,7 @@ def home():
     return send_from_directory(".", "index.html")
 
 @app.route("/chat", methods=["POST"])
+@app.route("/chat", methods=["POST"])
 def chat():
     try:
         data = request.get_json()
@@ -240,27 +241,27 @@ def chat():
         if not question:
             return jsonify({"error": "No message provided"}), 400
 
-        keywords = extract_keywords(question)
+        # ✅ Always define this first
+        translated_question = translate_to_english(question)
+
+        keywords = extract_keywords(translated_question)
         fix_data = find_fix(keywords)
 
         if fix_data:
-            # Fix found in local JSON
             return jsonify({
                 "source": "local",
                 "description": fix_data.get("description"),
-                "fix": fix_data.get("fix")
+                "fix": fix_data.get("fix"),
+                "translated": translated_question  
             })
         else:
-            
-                return jsonify({
-    "source": "servicenow",
-    "message": "No local fix found.",
-    "translated": translated_question 
-})
+            return jsonify({
+                "source": "servicenow",
+                "message": "No local fix found.",
+                "translated": translated_question 
+            })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-  
-
 
 
 # === MAIN ===
