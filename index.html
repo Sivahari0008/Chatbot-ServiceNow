@@ -170,6 +170,10 @@
 
         const data = await res.json();
 
+        if (data.translated) {
+      console.log("Translated message:", data.translated);
+          }
+
         if (data.source === 'local') {
           let responseHtml = '';
 
