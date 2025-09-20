@@ -9,8 +9,11 @@ import re
 from langdetect import detect
 from transformers import pipeline
 import warnings
-from googletrans import Translator
+
 from langdetect import detect
+from deep_translator import GoogleTranslator
+
+
 
 
 
@@ -117,17 +120,15 @@ def extract_keywords(text):
 #         return text
 
 
-translator = Translator()
 def translate_to_english(text):
     try:
-        lang = detect(text).lower()
-        if lang.startswith("en"):
-            return text
-        translated = translator.translate(text, dest="en")
-        return translated.text
+        # Detect & translate to English
+        translated = GoogleTranslator(source='auto', target='en').translate(text)
+        print(f"[Translation] Original: {text} => Translated: {translated}")
+        return translated
     except Exception as e:
-        print(f"Translation error: {e}")
-        return text
+        print(f"[Translation ERROR] {e}")
+        return text  # Fallback to original text
 
 
 def find_fix(keywords, repo_path="./docs"):
