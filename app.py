@@ -10,7 +10,7 @@ from langdetect import detect
 from transformers import pipeline
 import warnings
 
-from langdetect import detect
+
 from deep_translator import GoogleTranslator
 
 
@@ -254,7 +254,8 @@ def chat():
             
                 return jsonify({
     "source": "servicenow",
-    "message": "No local fix found."
+    "message": "No local fix found.",
+    "translated": translated_question 
 })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
