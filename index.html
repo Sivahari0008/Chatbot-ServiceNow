@@ -39,6 +39,7 @@
 
     .header h1 {
       color: #1e3e2e;
+      font-size: 28px;
     }
 
     .profile-icon {
@@ -124,13 +125,15 @@
       position: fixed;
       bottom: 90px;
       right: 20px;
-      width: 320px;
+      width: 340px;
       background-color: #ffffff;
       border: 1px solid #ccc;
       border-radius: 10px;
       box-shadow: 0 8px 16px rgba(0,0,0,0.3);
       z-index: 101;
+      display: flex;
       flex-direction: column;
+      max-height: 80vh;
     }
 
     #chat-header {
@@ -140,12 +143,57 @@
       border-top-left-radius: 10px;
       border-top-right-radius: 10px;
       text-align: center;
+      font-weight: bold;
+    }
+
+    #category-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 10px;
+      gap: 8px;
+    }
+
+    button.category, button.subcategory {
+      border: none;
+      border-radius: 20px;
+      padding: 6px 14px;
+      margin: 3px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    button.category {
+      background-color: #0078d7;
+      color: white;
+    }
+
+    button.subcategory {
+      background-color: #e0e0e0;
+      color: #333;
+      border: 1px solid #ccc;
     }
 
     #chat-body {
-      max-height: 300px;
-      overflow-y: auto;
       padding: 10px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .chat-message {
+      margin-bottom: 10px;
+    }
+
+    .user {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .bot {
+      color: #444;
+      background-color: #f1f1f1;
+      padding: 5px;
+      border-radius: 5px;
     }
 
     #chat-input {
@@ -169,20 +217,22 @@
       border-bottom-right-radius: 10px;
     }
 
-    .chat-message {
-      margin-bottom: 10px;
+    .upload-section {
+      padding: 10px;
+      border-top: 1px solid #ccc;
+      background-color: #f9f9f9;
+      text-align: center;
     }
 
-    .user {
-      font-weight: bold;
-      color: #333;
+    .upload-section label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 5px;
+      color: #555;
     }
 
-    .bot {
-      color: #444;
-      background-color: #f1f1f1;
-      padding: 5px;
-      border-radius: 5px;
+    .upload-section input[type="file"] {
+      font-size: 12px;
     }
   </style>
 </head>
@@ -216,42 +266,26 @@
       </div>
       <div class="tile-icon">🔐</div>
     </div>
-
-    <div class="tile">
-      <div>
-        <div class="tile-title">Create Evaluation</div>
-        <div class="tile-subtitle">Define filters and targets</div>
-      </div>
-      <div class="tile-status">Obsolete</div>
-    </div>
-
-    <div class="tile">
-      <div>
-        <div class="tile-title">Configure Drill-Down</div>
-        <div class="tile-subtitle">Define charts or tables</div>
-      </div>
-      <div class="tile-status">Obsolete</div>
-    </div>
-
-    <div class="tile">
-      <div>
-        <div class="tile-title">Create Tile</div>
-        <div class="tile-subtitle">Add tiles to evaluation</div>
-      </div>
-      <div class="tile-status">Obsolete</div>
-    </div>
   </div>
 
   <button id="chat-button">💬</button>
 
   <div id="chat-popup">
     <div id="chat-header">Support Chatbot</div>
+    <div id="category-buttons"></div>
     <div id="chat-body"></div>
+
+    <div class="upload-section">
+      <label for="error-image">Upload Error Images</label>
+      <input type="file" id="error-image" accept="image/*" />
+    </div>
+
     <div id="chat-input">
       <input type="text" id="user-input" placeholder="Type your message..." />
       <button onclick="sendMessage()">Send</button>
     </div>
   </div>
+
   <script>
     const chatButton = document.getElementById('chat-button');
     const chatPopup = document.getElementById('chat-popup');
@@ -272,9 +306,9 @@
       }
     };
 
-    function showCategoryButtons() {
+       function showCategoryButtons() {
       categoryContainer.innerHTML = '';
-      categoryContainer.style.display = 'block';
+      categoryContainer.style.display = 'flex';
 
       for (const category in categories) {
         const btn = document.createElement('button');
@@ -353,16 +387,15 @@
 
     function sendMessage() {
       const input = document.getElementById('user-input');
-      const question = input.value.trim();
-      if (!question) return;
-      appendMessage('user', question);
+      const message = input.value.trim();
+      if (!message) return;
+      appendMessage('user', message);
       input.value = '';
-      sendText(question);
+      sendText(message);
     }
 
-    document.getElementById('user-input').addEventListener("keypress", function (e) {
-      if (e.key === "Enter") {
-        e.preventDefault();
+    document.getElementById('user-input').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
         sendMessage();
       }
     });
@@ -374,6 +407,7 @@
           <label>Email:<br><input type="email" id="user-email" required></label><br>
           <label>Short Description:<br><input type="text" id="short-description" required></label><br>
           <label>Detailed Description:<br><textarea id="long-description" required></textarea></label><br>
+          <label>Upload Error Image:<br><input type="file" id="error-upload" accept="image/*"></label><br>
           <button type="submit">Submit Ticket</button>
         </form>
       `;
@@ -391,19 +425,19 @@
         const email = document.getElementById('user-email').value.trim();
         const shortDesc = document.getElementById('short-description').value.trim();
         const longDesc = document.getElementById('long-description').value.trim();
+        const imageFile = document.getElementById('error-upload').files[0];
 
-        const ticketData = {
-          name,
-          email,
-          short_description: shortDesc,
-          description: longDesc
-        };
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('email', email);
+        formData.append('short_description', shortDesc);
+        formData.append('description', longDesc);
+        if (imageFile) formData.append('error_image', imageFile);
 
         try {
           const response = await fetch('/create_servicenow_ticket', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(ticketData)
+            body: formData
           });
 
           const result = await response.json();
@@ -422,38 +456,6 @@
       });
     }
   </script>
-
-<!--   <script>
-    const chatButton = document.getElementById('chat-button');
-    const chatPopup = document.getElementById('chat-popup');
-    const chatBody = document.getElementById('chat-body');
-
-    chatButton.onclick = () => {
-      chatPopup.style.display = chatPopup.style.display === 'block' ? 'none' : 'block';
-    };
-
-    function appendMessage(sender, message) {
-      const msg = document.createElement('div');
-      msg.className = 'chat-message';
-      msg.innerHTML = `<div class="${sender}">${message}</div>`;
-      chatBody.appendChild(msg);
-      chatBody.scrollTop = chatBody.scrollHeight;
-    }
-
-    function sendMessage() {
-      const input = document.getElementById('user-input');
-      const message = input.value.trim();
-      if (!message) return;
-      appendMessage('user', message);
-      appendMessage('bot', '🤖 Thanks for your message. A support agent will respond shortly.');
-      input.value = '';
-    }
-
-    document.getElementById('user-input').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') {
-        sendMessage();
-      }
-    });
-  </script> -->
 </body>
 </html>
+
