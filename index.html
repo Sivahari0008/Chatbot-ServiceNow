@@ -252,8 +252,178 @@
       <button onclick="sendMessage()">Send</button>
     </div>
   </div>
-
   <script>
+    const chatButton = document.getElementById('chat-button');
+    const chatPopup = document.getElementById('chat-popup');
+    const chatBody = document.getElementById('chat-body');
+    const categoryContainer = document.getElementById('category-buttons');
+
+    const categories = {
+      "SAP BW": ["Data Issue", "Connection Issue"],
+      "SAP AO": ["First Time Installation", "Application Not Working"],
+      "SAP Fiori": ["Access Issue", "Display Issue"],
+      "SAP Authorization": ["Role Missing", "Access Denied"]
+    };
+
+    chatButton.onclick = () => {
+      chatPopup.style.display = chatPopup.style.display === 'block' ? 'none' : 'block';
+      if (chatPopup.style.display === 'block') {
+        showCategoryButtons();
+      }
+    };
+
+    function showCategoryButtons() {
+      categoryContainer.innerHTML = '';
+      categoryContainer.style.display = 'block';
+
+      for (const category in categories) {
+        const btn = document.createElement('button');
+        btn.className = 'category';
+        btn.textContent = category;
+        btn.onclick = () => showSubcategories(category);
+        categoryContainer.appendChild(btn);
+      }
+    }
+
+    function showSubcategories(category) {
+      categoryContainer.innerHTML = '';
+      const issues = categories[category];
+      issues.forEach(issue => {
+        const issueBtn = document.createElement('button');
+        issueBtn.className = 'subcategory';
+        issueBtn.textContent = issue;
+        issueBtn.onclick = () => {
+          const message = `${category} - ${issue}`;
+          appendMessage('user', message);
+          sendText(message);
+          categoryContainer.style.display = 'none';
+        };
+        categoryContainer.appendChild(issueBtn);
+      });
+    }
+
+    function appendMessage(sender, message) {
+      const msg = document.createElement('div');
+      msg.className = 'chat-message';
+      msg.innerHTML = `<div class="${sender}">${message}</div>`;
+      chatBody.appendChild(msg);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    async function sendText(message) {
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+
+        const data = await res.json();
+
+        if (data.source === 'local') {
+          let responseHtml = '';
+
+          if (data.description) {
+            responseHtml += `<strong>${data.description}</strong>`;
+          }
+
+          if (Array.isArray(data.fix)) {
+            const bulletPoints = data.fix.map(step => `<li>${step}</li>`).join('');
+            responseHtml += `<ul>${bulletPoints}</ul>`;
+          } else if (typeof data.fix === 'string') {
+            const lines = data.fix.split('\n').filter(line => line.trim());
+            const bulletPoints = lines.map(line => `<li>${line.replace(/^\d+\.\s*/, '')}</li>`).join('');
+            responseHtml += `<ul>${bulletPoints}</ul>`;
+          } else {
+            responseHtml += data.fix;
+          }
+
+          appendMessage('bot', `✅ Fix found: ${responseHtml}`);
+        } else if (data.source === 'servicenow') {
+          appendMessage('bot', `❌ No solution found. Would you like to create a support ticket?`);
+          showTicketForm();
+        } else {
+          appendMessage('bot', `⚠️ Unexpected response: ${JSON.stringify(data)}`);
+        }
+      } catch (error) {
+        console.error(error);
+        appendMessage('bot', '⚠️ Error connecting to server.');
+      }
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('user-input');
+      const question = input.value.trim();
+      if (!question) return;
+      appendMessage('user', question);
+      input.value = '';
+      sendText(question);
+    }
+
+    document.getElementById('user-input').addEventListener("keypress", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    function showTicketForm() {
+      const formHTML = `
+        <form id="ticket-form" class="bot">
+          <label>Name:<br><input type="text" id="user-name" required></label><br>
+          <label>Email:<br><input type="email" id="user-email" required></label><br>
+          <label>Short Description:<br><input type="text" id="short-description" required></label><br>
+          <label>Detailed Description:<br><textarea id="long-description" required></textarea></label><br>
+          <button type="submit">Submit Ticket</button>
+        </form>
+      `;
+
+      const formDiv = document.createElement('div');
+      formDiv.className = 'chat-message';
+      formDiv.innerHTML = formHTML;
+      chatBody.appendChild(formDiv);
+      chatBody.scrollTop = chatBody.scrollHeight;
+
+      document.getElementById('ticket-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const name = document.getElementById('user-name').value.trim();
+        const email = document.getElementById('user-email').value.trim();
+        const shortDesc = document.getElementById('short-description').value.trim();
+        const longDesc = document.getElementById('long-description').value.trim();
+
+        const ticketData = {
+          name,
+          email,
+          short_description: shortDesc,
+          description: longDesc
+        };
+
+        try {
+          const response = await fetch('/create_servicenow_ticket', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(ticketData)
+          });
+
+          const result = await response.json();
+
+          if (result.number) {
+            appendMessage('bot', `✅ Ticket created successfully: ${result.number}`);
+          } else {
+            appendMessage('bot', `⚠️ Failed to create ticket: ${JSON.stringify(result)}`);
+          }
+
+          formDiv.remove();
+        } catch (err) {
+          console.error(err);
+          appendMessage('bot', '⚠️ Error submitting the ticket.');
+        }
+      });
+    }
+  </script>
+
+<!--   <script>
     const chatButton = document.getElementById('chat-button');
     const chatPopup = document.getElementById('chat-popup');
     const chatBody = document.getElementById('chat-body');
@@ -284,6 +454,6 @@
         sendMessage();
       }
     });
-  </script>
+  </script> -->
 </body>
 </html>
