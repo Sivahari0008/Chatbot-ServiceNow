@@ -423,6 +423,7 @@
         </form>
       `;
 
+
       const formDiv = document.createElement('div');
       formDiv.className = 'chat-message';
       formDiv.innerHTML = formHTML;
@@ -436,19 +437,20 @@
         const email = document.getElementById('user-email').value.trim();
         const shortDesc = document.getElementById('short-description').value.trim();
         const longDesc = document.getElementById('long-description').value.trim();
-        const imageFile = document.getElementById('error-upload').files[0];
+        
 
-        const formData = new FormData();
-        formData.append('name', name);
-        formData.append('email', email);
-        formData.append('short_description', shortDesc);
-        formData.append('description', longDesc);
-        if (imageFile) formData.append('error_image', imageFile);
+        const ticketData = {
+          name,
+          email,
+          short_description: shortDesc,
+          description: longDesc
+        };
 
         try {
           const response = await fetch('/create_servicenow_ticket', {
             method: 'POST',
-            body: formData
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(ticketData)
           });
 
           const result = await response.json();
@@ -466,6 +468,7 @@
         }
       });
     }
+
   </script>
 </body>
 </html>
