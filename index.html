@@ -310,13 +310,16 @@
       "SAP Fiori": ["Access Issue", "Display Issue"],
       "SAP Authorization": ["Role Missing", "Access Denied"]
     };
-
+    
     chatButton.onclick = () => {
-      chatPopup.style.display = chatPopup.style.display === 'block' ? 'none' : 'block';
-      if (chatPopup.style.display === 'block') {
-        showCategoryButtons();
-      }
-    };
+  const isVisible = window.getComputedStyle(chatPopup).display === 'block';
+  chatPopup.style.display = isVisible ? 'none' : 'block';
+
+  if (!isVisible) {
+    showCategoryButtons();
+  }
+};
+
 
        function showCategoryButtons() {
       categoryContainer.innerHTML = '';
@@ -365,6 +368,11 @@
         });
 
         const data = await res.json();
+
+        if (data.translated) {
+          console.log("Translated message:", data.translated);
+          
+        }
 
         if (data.source === 'local') {
           let responseHtml = '';
