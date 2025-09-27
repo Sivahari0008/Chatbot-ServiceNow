@@ -246,6 +246,11 @@
 #chat-body::-webkit-scrollbar-track {
   background: transparent;
 }
+.hidden {
+  display: none !important;
+  visibility: hidden;
+}
+
   </style>
 </head>
 <body>
@@ -282,7 +287,7 @@
 
   <button id="chat-button">💬</button>
 
-  <div id="chat-popup">
+ <div id="chat-popup" class="hidden">
     <div id="chat-header">Support Chatbot</div>
     <div id="category-buttons"></div>
     <div id="chat-body"></div>
@@ -311,14 +316,19 @@
       "SAP Authorization": ["Role Missing", "Access Denied"]
     };
     
-    chatButton.onclick = () => {
-  const isVisible = window.getComputedStyle(chatPopup).display === 'block';
-  chatPopup.style.display = isVisible ? 'none' : 'block';
-
-  if (!isVisible) {
+   chatButton.onclick = () => {
+  const isHidden = chatPopup.classList.contains('hidden');
+  if (isHidden) {
+    chatPopup.classList.remove('hidden');
     showCategoryButtons();
+  } else {
+    chatPopup.classList.add('hidden');
+    // Optionally clear subcategory buttons when closing
+    categoryContainer.innerHTML = '';
+    categoryContainer.style.display = 'none';
   }
 };
+
 
 
        function showCategoryButtons() {
