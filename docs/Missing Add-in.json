@@ -1,0 +1,12 @@
+{
+  "error_keywords": ["excel", "add-in", "missing","addin","analysis"],
+  "description": "Please follow below steps to enable missing Add-in.",
+  "fix": [
+    "1.Open Excel Options.",
+    "2.Click on “Add-Ins” tab and select “Disabled Items” in Manage box. Then click “Go”.",
+    "3.If the Analysis Office Add-In is listed here select it and click on Enable.",
+    "Restart the database service and try again.",
+    "4.If Analysis Add-In is not listed, like in the screenshot above, go back to Step #2 and select “COM AddIn” in the Manage box. Then click “Go”.",
+    "5.Make sure to have the Analysis Add-In checked and click “Ok”".
+  ]
+}
