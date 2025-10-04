@@ -1,0 +1,10 @@
+{
+  "error_keywords": ["Data", " Issue", "BW"],
+  "description": "Data Issue in report",
+  "fix": [
+    "1.Please.",
+    "Check if the host and port are reachable.",
+    "Verify database credentials in the environment config.",
+    "Restart the database service and try again."
+  ]
+}
