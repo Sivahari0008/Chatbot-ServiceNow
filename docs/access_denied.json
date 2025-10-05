@@ -1,0 +1,11 @@
+{
+  "error_keywords": ["access", "denied", "unable","report","analysis"],
+  "description": "Please follow below steps to reset SAP Account.",
+  "fix": [
+    "1.Go to Company Portal.",
+    "2.Select Password reset",
+    "3.Provide desried system Ex: for BW- choose SAP 'BWP'",
+    "4.Sunbmit the form",
+    "5.Retry the system/report in 5 minutes".
+  ]
+}
