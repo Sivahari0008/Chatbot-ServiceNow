@@ -1,0 +1,10 @@
+{
+  "error_keywords": ["role", "missing"],
+  "description": "Steps to gain access to the report",
+  "fix": [
+    "1.Go to Authorization portal",
+    "2.Identify the roles required to access the report.",
+    "3.Submit the request",
+    "4.Once the role is approved you will be able to access the report."
+  ]
+}
