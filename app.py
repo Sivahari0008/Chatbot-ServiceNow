@@ -131,8 +131,38 @@ def translate_to_english(text):
         return text  # Fallback to original text
 
 
-def find_fix(keywords, repo_path="./docs"):
-    """Looks for a fix in the local /fixes folder."""
+# def find_fix(keywords, repo_path="./docs"):
+#     """Looks for a fix in the local /fixes folder."""
+    
+#     keywords = set(k.lower() for k in keywords)  # Normalize input keywords
+    
+#     best_match = None
+#     max_matches = 0
+    
+#     for filename in os.listdir(repo_path):
+#         if filename.endswith(".json"):
+#             filepath = os.path.join(repo_path, filename)
+#             with open(filepath, "r") as f:
+#                 data = json.load(f)
+#                 error_keywords = set(k.lower() for k in data.get("error_keywords", []))
+                
+#                 print(f"Checking {filename} with error_keywords: {error_keywords}")
+                
+#                 # Find intersection count
+#                 matches = len(keywords & error_keywords)
+                
+#                 if matches > max_matches:
+#                     max_matches = matches
+#                     best_match = data
+    
+#     if best_match:
+#         print(f"Best match found with {max_matches} keywords matched.")
+#         return best_match
+#     else:
+#         print("No match found with keywords:", keywords)
+#         return None
+def find_fix(keywords, repo_path="./docs", min_required_matches=2):
+    """Looks for a fix in the local /fixes folder with at least 2 keyword matches."""
     
     keywords = set(k.lower() for k in keywords)  # Normalize input keywords
     
@@ -148,10 +178,10 @@ def find_fix(keywords, repo_path="./docs"):
                 
                 print(f"Checking {filename} with error_keywords: {error_keywords}")
                 
-                # Find intersection count
+                # Count keyword matches
                 matches = len(keywords & error_keywords)
                 
-                if matches > max_matches:
+                if matches >= min_required_matches and matches > max_matches:
                     max_matches = matches
                     best_match = data
     
@@ -159,9 +189,8 @@ def find_fix(keywords, repo_path="./docs"):
         print(f"Best match found with {max_matches} keywords matched.")
         return best_match
     else:
-        print("No match found with keywords:", keywords)
+        print(f"No fix found with at least {min_required_matches} keyword matches. Input keywords: {keywords}")
         return None
-
 
 
 @app.route("/create_servicenow_ticket", methods=["POST"])
