@@ -1,0 +1,10 @@
+{
+  "error_keywords": ["analysis","analyser","works","incorrectly","registered","add-in"],
+  "description": "Steps to repair SAP AO.",
+  "fix": [
+    "1.Close all excel",
+    "2. Open Software center",
+    "3. Search for SAP Analysis",
+    "4 . Click on Uninstall/repair. After installation, Analysis will work normally."
+  ]
+}
