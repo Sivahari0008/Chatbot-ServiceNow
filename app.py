@@ -57,19 +57,44 @@ app = Flask(__name__)
 #         print(f"OpenAI error: {e}")
 #         return []
 
+# def extract_keywords(text):
+#     """Local fallback keyword extractor using basic NLP."""
+#     stopwords = {
+#         "i", "am", "have", "has", "had", "having", "is", "was", "are", "were",
+#         "the", "a", "an", "to", "in", "on", "for", "with", "of", "and", "or",
+#         "it", "this", "that", "my", "your", "you", "me", "we", "us", "do", "does",
+#         "did", "at", "by", "as", "from", "but", "not", "be", "can", "could", "will",
+#         "would", "should"
+#     }
+
+#     words = re.findall(r'\b\w+\b', text.lower())
+#     keywords = [word for word in words if word not in stopwords]
+#     return keywords[:4]  # Limit to top 4 keywords for matching
 def extract_keywords(text):
-    """Local fallback keyword extractor using basic NLP."""
+    # Extract quoted text (like error messages)
+    quoted_errors = re.findall(r'"(.*?)"', text)
+    
+    # Extract individual words (fallback)
     stopwords = {
         "i", "am", "have", "has", "had", "having", "is", "was", "are", "were",
         "the", "a", "an", "to", "in", "on", "for", "with", "of", "and", "or",
         "it", "this", "that", "my", "your", "you", "me", "we", "us", "do", "does",
         "did", "at", "by", "as", "from", "but", "not", "be", "can", "could", "will",
-        "would", "should"
+        "would", "should", "z", "zb", "beim", "kommt", "die", "einer"
     }
 
     words = re.findall(r'\b\w+\b', text.lower())
     keywords = [word for word in words if word not in stopwords]
-    return keywords[:4]  # Limit to top 4 keywords for matching
+
+    # Combine quoted error + keyword words
+    combined_keywords = quoted_errors + keywords
+
+    print(f"[Keyword Extraction] Quoted Errors: {quoted_errors}")
+    print(f"[Keyword Extraction] Fallback Keywords: {keywords}")
+    print(f"[Keyword Extraction] Combined: {combined_keywords}")
+
+    return combined_keywords[:6]  # Increase limit slightly to include full error
+
 
 ### --- Translation --- ### 
 # LANG_MODEL_MAP = { 'de': 'Helsinki-NLP/opus-mt-de-en', 
